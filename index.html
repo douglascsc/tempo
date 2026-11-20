@@ -51,6 +51,8 @@
   .marker .lbl { position: absolute; left: 10px; top: -8px; white-space: nowrap; font-size: 12px; font-weight: 600;
     color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   #radarControls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+  #radarControls select { padding: 8px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); font-size: .95rem; }
   #radarControls button { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line);
     background: var(--bg); color: var(--text); font-size: 1rem; cursor: pointer; }
   #frame { flex: 1 1 200px; }
@@ -95,7 +97,11 @@
       <button id="playBtn" title="Play/Pause">⏸️</button>
       <button id="prevBtn" title="Anterior">⏮️</button>
       <button id="nextBtn" title="Próxima">⏭️</button>
-      <input type="range" id="frame" min="0" max="23" value="23">
+      <select id="span" title="Período da animação">
+        <option value="4">Últimos 15 min</option>
+        <option value="24">Últimas 2 h</option>
+      </select>
+      <input type="range" id="frame" min="0" max="3" value="3">
       <label class="zoom">🔍 <input type="range" id="zoom" min="1" max="4" step="0.1" value="1"></label>
     </div>
   </section>
@@ -115,7 +121,8 @@
 
   <footer>
     Previsão: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
-    Radar: Climatempo (uso pessoal) · Atualiza sozinho a cada 10 min
+    Radar: Climatempo (uso pessoal) · Atualiza sozinho a cada 5 min<br>
+    Os textos acima são <b>previsão</b>, não medição: confira sempre o radar.
   </footer>
 </main>
 
@@ -130,8 +137,8 @@ const CITIES = [
 // Área coberta pela imagem do radar (projeção lat/lon simples)
 const RADAR_BOUNDS = { west: -54.30, east: -48.10, north: -28.21, south: -31.97 };
 const RADAR_URL = i => `https://statics.climatempo.com.br/radar_poa/pngs/latest/radar_poa_${i}.png`;
-const RADAR_FRAMES = 24;           // 1 = mais recente, 24 = mais antiga
-const REFRESH_MS = 10 * 60 * 1000; // 10 minutos
+const RADAR_FRAMES = 24;           // 1 = mais recente, 24 = mais antiga (1 quadro a cada 5 min)
+const REFRESH_MS = 5 * 60 * 1000;  // 5 minutos (mesmo ritmo do radar)
 
 const RAIN_MIN = 0.1;  // mm em 15 min para considerar "chuva"
 let forecasts = {};    // id -> dados da Open-Meteo
@@ -178,20 +185,20 @@ function summarize(f) {
 
   if (rainingNow) {
     const stop = m.findIndex(x => x.p < RAIN_MIN);
-    const until = stop > 0 && stop < 12 ? `, deve parar por volta das ${hhmm(m[stop].t)}` : "";
-    return { wet: true, badge: "Chovendo", text: `Chovendo agora${until}.`,
-      sub: `~${fmtMm(next1h)} mm na próxima hora` };
+    const until = stop > 0 && stop < 12 ? `; a previsão indica parar por volta das ${hhmm(m[stop].t)}` : "";
+    return { wet: true, badge: "Possível chuva", text: `Possivelmente chovendo agora${until}.`,
+      sub: `~${fmtMm(next1h)} mm previstos na próxima hora · confira no radar` };
   }
   const start = m.slice(0, 12).find(x => x.p >= RAIN_MIN); // próximas 3 h
   if (start) {
     const i = m.indexOf(start);
     const mm = m.slice(i, i + 4).reduce((s, x) => s + x.p, 0);
-    return { wet: true, badge: "Chuva em breve", text: `Chuva prevista a partir das ${hhmm(start.t)}.`,
-      sub: `~${fmtMm(mm)} mm na primeira hora` };
+    return { wet: true, badge: "Chuva em breve?", text: `Pode chover a partir das ${hhmm(start.t)}.`,
+      sub: `~${fmtMm(mm)} mm previstos na primeira hora` };
   }
   const later = h.slice(0, 12).find(x => x.p >= 0.2 || x.prob >= 60);
   if (later) {
-    return { wet: false, badge: "Seco por ora", text: `Sem chuva nas próximas 3 h.`,
+    return { wet: false, badge: "Seco por ora", text: `Sem chuva prevista nas próximas 3 h.`,
       sub: `Possível chuva a partir das ${hh(later.t)} (${later.prob}%)` };
   }
   const maxProb = Math.max(0, ...h.slice(0, 12).map(x => x.prob));
@@ -227,7 +234,8 @@ function selectCity(id) {
 }
 
 // ===================== 2. Radar =====================
-let frame = RADAR_FRAMES; // índice da imagem (24 = mais antiga)
+let span = 4;   // quantos quadros animar: 4 = últimos 15 min, 24 = últimas 2 h
+let frame = span; // índice da imagem (maior = mais antiga)
 let playing = true, timer = null, frames = [];
 
 function cityPos(c) {
@@ -257,14 +265,21 @@ function loadRadar() {
 function showFrame(i) {
   frame = i;
   document.getElementById("radarImg").src = frames[i];
-  document.getElementById("frame").value = RADAR_FRAMES - i; // slider: esquerda = antiga
-  const ago = i === 1 ? "mais recente" : `${i - 1} quadros atrás`;
-  document.getElementById("frameInfo").textContent = `· ${RADAR_FRAMES - i + 1}/${RADAR_FRAMES} (${ago})`;
+  document.getElementById("frame").value = span - i; // slider: esquerda = antiga
+  const ago = i === 1 ? "imagem mais recente" : `${(i - 1) * 5} min antes da mais recente`;
+  document.getElementById("frameInfo").textContent = `· ${ago}`;
+}
+
+function setSpan(n) {
+  span = n;
+  const s = document.getElementById("frame");
+  s.max = span - 1;
+  showFrame(Math.min(frame, span));
 }
 
 function step(dir) { // dir = +1 avança no tempo
   let i = frame - dir;
-  if (i < 1) i = RADAR_FRAMES; if (i > RADAR_FRAMES) i = 1;
+  if (i < 1) i = span; if (i > span) i = 1;
   showFrame(i);
 }
 
@@ -293,7 +308,8 @@ function applyZoom() {
 document.getElementById("playBtn").onclick = () => setPlaying(!playing);
 document.getElementById("prevBtn").onclick = () => { setPlaying(false); step(-1); };
 document.getElementById("nextBtn").onclick = () => { setPlaying(false); step(1); };
-document.getElementById("frame").oninput = e => { setPlaying(false); showFrame(RADAR_FRAMES - +e.target.value); };
+document.getElementById("frame").oninput = e => { setPlaying(false); showFrame(span - +e.target.value); };
+document.getElementById("span").onchange = e => setSpan(+e.target.value);
 document.getElementById("zoom").oninput = applyZoom;
 
 // ===================== 3. Gráfico =====================
