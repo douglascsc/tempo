@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6feb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z' fill='%231f6feb'/><path d='M12 12v7a2 2 0 0 1-4 0'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=21">
+<link rel="stylesheet" href="css/style.css?v=22">
 </head>
 <body>
 <main>
@@ -48,8 +48,6 @@
       <button id="prevBtn" title="Anterior" aria-label="Quadro anterior"></button>
       <button id="nextBtn" title="Próxima" aria-label="Próximo quadro"></button>
       <select id="span" title="Período da animação" aria-label="Período da animação">
-        <option value="15">Últimos 15 min</option>
-        <option value="120">Últimas 2 h</option>
       </select>
       <input type="range" id="frame" min="0" max="3" value="3" aria-label="Momento da animação do radar">
       <label class="zoom"><span id="zoomIcon"></span><input type="range" id="zoom" min="1" max="4" step="0.1" value="1" aria-label="Zoom do radar"></label>
@@ -115,7 +113,7 @@
     <ul>
       <li><b>Cartão de cima</b> (chuva nas próximas 2 h, quando começa e termina, mm, se intensificando, chuva mais próxima, célula forte, chuva nas últimas 2 h e mini-radar): <b>radar RainViewer</b>. Os mm são estimativa.</li>
       <li><b>Máx/mín de hoje</b>: previsão do tempo.</li>
-      <li><b>Radar animado</b>: Climatempo (radar de Porto Alegre, mais detalhado, pode atrasar) ou RainViewer (com horário exato e previsão desenhada de até 1 h).</li>
+      <li><b>Radar animado</b>: Climatempo (radar de Porto Alegre, mais detalhado, pode atrasar) ou RainViewer (com horário exato, últimas 2 h e previsão desenhada das próximas 2 h).</li>
       <li><b>Depois das próximas 2 h</b>, <b>gráfico de 48 h</b>, <b>janela seca</b>, <b>5 dias</b> e <b>alertas de trovoada e rajada</b>: previsão do tempo (Open-Meteo).</li>
       <li><b>Rio dos Sinos</b>: estações da ANA (nível medido a cada 5–15 min). Cota de inundação em Campo Bom: 6,80 m.</li>
       <li><b>Cores e nomes da chuva</b> (fraca, moderada, intensa, muito intensa): escala da Defesa Civil.</li>
@@ -136,13 +134,13 @@
   <div class="muted">Chuva da última imagem do radar (RainViewer) · a seta mostra de onde a chuva vem · área de ~100 km</div>
 </dialog>
 
-<script src="js/config.js?v=21"></script>
-<script src="js/icones.js?v=21"></script>
-<script src="js/previsao.js?v=21"></script>
-<script src="js/grafico.js?v=21"></script>
-<script src="js/radar.js?v=21"></script>
-<script src="js/nowcast.js?v=21"></script>
-<script src="js/rio.js?v=21"></script>
-<script src="js/main.js?v=21"></script>
+<script src="js/config.js?v=22"></script>
+<script src="js/icones.js?v=22"></script>
+<script src="js/previsao.js?v=22"></script>
+<script src="js/grafico.js?v=22"></script>
+<script src="js/radar.js?v=22"></script>
+<script src="js/nowcast.js?v=22"></script>
+<script src="js/rio.js?v=22"></script>
+<script src="js/main.js?v=22"></script>
 </body>
 </html>

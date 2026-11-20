@@ -3,18 +3,24 @@
 // e RainViewer (mapa com horário exato de cada imagem, 1 a cada 10 min).
 // Em ambas, o quadro 1 é o mais recente.
 let src = localStorageGet("radarSrc") || "ct";
-let spanMin = 15;      // minutos animados: 15 ou 120
+// período da animação: "15" (últimos 15 min), "120" (últimas 2 h), "next" (próximas 2 h), "all" (últimas 2 h + próximas 2 h)
+// "next" e "all" só existem no RainViewer, que tem a previsão desenhada
+let mode = "15";
+const MODES = {
+  ct: [["15", "Últimos 15 min"], ["120", "Últimas 2 h"]],
+  rv: [["next", "Próximas 2 h"], ["all", "Últimas 2 h + próximas 2 h"], ["120", "Últimas 2 h"]],
+};
 let frame = 1;
 let playing = true, timer = null, frames = [];
 let rv = { map: null, layers: [], times: [], markers: [], future: [], arrow: null };
 let rvFuture = null;       // preenchido pelo nowcast: imagem mais nova + velocidade da chuva
-const FUTURE_STEPS = [10, 20, 30, 40, 50, 60]; // minutos após a imagem mais nova
+const FUTURE_STEPS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]; // previsão desenhada: até 2 h após a imagem mais nova
 
 const STEP_MIN = () => (src === "ct" ? 5 : 10);
 const available = () => (src === "ct" ? RADAR_FRAMES : rv.layers.length);
-const nFrames = () => Math.max(1, Math.min(available(), Math.floor(spanMin / STEP_MIN()) + 1));
+const nFrames = () => Math.max(1, Math.min(available(), mode === "next" ? 1 : mode === "15" ? Math.floor(15 / STEP_MIN()) + 1 : 99));
 // quadros <= 0 são a previsão (0 = +10 min, -1 = +20 min ...), só no RainViewer
-const minFrame = () => (src === "rv" && rv.future.length ? 1 - rv.future.length : 1);
+const minFrame = () => (src === "rv" && (mode === "next" || mode === "all") && rv.future.length ? 1 - rv.future.length : 1);
 
 function cityPos(c) {
   const b = RADAR_BOUNDS;
@@ -131,7 +137,7 @@ function showFrame(i) {
     const fromNow = Math.round((when - Date.now()) / 60000);
     document.getElementById("frameInfo").textContent = `· previsão ${hhmm(when)}`;
     t.className = "future";
-    t.innerHTML = `${uIcon("sparkle")} <b>Previsão para ${hhmm(when)}</b> (${fromNow >= 0 ? `daqui ~${fromNow} min` : "agora"}) · extrapolação do movimento, pode mudar`;
+    t.innerHTML = `${uIcon("sparkle")} <b>Previsão para ${hhmm(when)}</b> (${fromNow > 0 ? `daqui ~${durTxt(fromNow)}` : "agora"}) · extrapolação do movimento, pode mudar`;
   } else if (rv.layers.length) {
     rv.future.forEach(l => l.setOpacity(0));
     rv.layers.forEach((l, k) => l.setOpacity(k === frame - 1 ? 0.75 : 0));
@@ -157,7 +163,7 @@ function step(dir) { // dir = +1 avança no tempo
 function tick() {
   // velocidade conforme a quantidade de quadros: poucos quadros andam mais devagar
   // Climatempo 15 min (4 quadros): 1 s cada · 2 h (24 quadros): 0,4 s · RainViewer: 0,8 s
-  const per = src === "rv" ? 800 : nFrames() <= 4 ? 1000 : 400;
+  const per = src === "rv" ? (frame <= 0 ? 600 : 800) : nFrames() <= 4 ? 1000 : 400;
   const hold = 2500; // pausa no último quadro (mais recente, ou fim da previsão)
   const delay = frame === minFrame() ? hold : frame === 1 && minFrame() < 1 ? 1200 : per;
   // com a aba em segundo plano a animação não avança (economiza bateria)
@@ -177,6 +183,7 @@ async function setSource(s) {
   document.getElementById("radarBox").hidden = s !== "ct";
   document.getElementById("rvMap").hidden = s !== "rv";
   document.querySelector("label.zoom").hidden = s !== "ct";
+  fillModes();
   if (s === "ct") preloadClimatempo();
   if (s === "rv") {
     initRainViewerMap();
@@ -232,7 +239,14 @@ document.getElementById("playBtn").onclick = () => setPlaying(!playing);
 document.getElementById("prevBtn").onclick = () => { setPlaying(false); step(-1); };
 document.getElementById("nextBtn").onclick = () => { setPlaying(false); step(1); };
 document.getElementById("frame").oninput = e => { setPlaying(false); showFrame(nFrames() - +e.target.value); };
-document.getElementById("span").onchange = e => { spanMin = +e.target.value; preloadClimatempo(); showFrame(nFrames()); };
+document.getElementById("span").onchange = e => { mode = e.target.value; preloadClimatempo(); showFrame(nFrames()); };
+
+// opções do período conforme a fonte do radar
+function fillModes() {
+  const sel = document.getElementById("span"), opts = MODES[src];
+  if (!opts.some(([v]) => v === mode)) mode = opts[0][0]; // padrão: Climatempo 15 min, RainViewer próximas 2 h
+  sel.innerHTML = opts.map(([v, t]) => `<option value="${v}"${v === mode ? " selected" : ""}>${t}</option>`).join("");
+}
 document.getElementById("zoom").oninput = applyZoom;
 document.querySelectorAll("#srcTabs button").forEach(b => b.onclick = () => setSource(b.dataset.src));
 
