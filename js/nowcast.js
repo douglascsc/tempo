@@ -131,6 +131,6 @@ function renderRadarMotion() {
   const m = radarMotion;
   const mov = m.from ? ` · chuva vindo do <b>${m.from}</b> a <b>${Math.round(m.speed)} km/h</b>`
     : " · movimento da chuva: parado ou chuva insuficiente para estimar";
-  el.innerHTML = `🧭 Radar RainViewer · imagem das <b>${hhmm(m.time)}</b> (${m.ageMin} min atrás)${mov}`;
+  el.innerHTML = `🧭 Radar RainViewer · imagem das <b>${hhmm(m.time)}</b> (${m.ageMin} min atrás)${mov} ${infoBtn("ncNote")}`;
 }
 

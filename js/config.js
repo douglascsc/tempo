@@ -15,6 +15,15 @@ const RAIN_MIN = 0.1;  // mm em 15 min para considerar "chuva"
 let forecasts = {};    // id -> dados da Open-Meteo
 let selected = localStorageGet("cidade") || "cb";
 
+// Textos de ajuda que no celular ficam escondidos atrás de um botão ⓘ
+const openInfo = new Set();
+const infoBtn = id => `<button class="ibtn" onclick="toggleInfo('${id}')" aria-label="Mais informações">ⓘ</button>`;
+const infoCls = id => `phone-info${openInfo.has(id) ? " show" : ""}`;
+function toggleInfo(id) {
+  openInfo.has(id) ? openInfo.delete(id) : openInfo.add(id);
+  document.getElementById(id)?.classList.toggle("show", openInfo.has(id));
+}
+
 function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
 

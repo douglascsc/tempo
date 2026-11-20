@@ -115,7 +115,7 @@ function showFrame(i) {
     t.className = "";
     // no celular o zoom esconde o canto da imagem: mostra o horário recortado da própria imagem
     t.innerHTML = IS_PHONE && frames[frame]
-      ? `🕒 Horário da imagem: <span class="ct-time" style="background-image:url('${frames[frame]}')"></span><br><span class="muted">Pode ter até ~1 h de atraso; para o horário exato, use o RainViewer.</span>`
+      ? `🕒 Horário da imagem: <span class="ct-time" style="background-image:url('${frames[frame]}')"></span> ${infoBtn("ctNote")}<div id="ctNote" class="muted ${infoCls("ctNote")}">Pode ter até ~1 h de atraso; para o horário exato, use o RainViewer.</div>`
       : "🕒 O horário está no canto inferior direito da imagem. Este radar pode chegar com <b>até ~1 h de atraso</b>; para o horário exato, use o RainViewer.";
   } else if (rv.layers.length && frame <= 0) {
     rv.layers.forEach(l => l.setOpacity(0));
