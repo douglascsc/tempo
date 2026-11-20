@@ -210,17 +210,23 @@ function renderCards() {
   box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
     <h3 class="vh">${c.name}</h3>
     <div class="wx-head">
-      <button class="mini-btn" onclick="openMini()" aria-label="Ampliar o mini-radar de ${c.name}" title="Toque para ampliar">
-        <canvas class="mini" width="256" height="256" aria-hidden="true"></canvas><span class="mini-zoom">${uIcon("search")}</span></button>
+      <div class="mini-col">
+        <button class="mini-btn" onclick="openMini()" aria-label="Ampliar o mini-radar de ${c.name}" title="Toque para ampliar">
+          <div class="mini ct-mini" role="img" aria-label="Mini-radar da Climatempo em volta de ${c.name}">
+            <svg class="mini-arrow" viewBox="0 0 100 100" aria-hidden="true"></svg><span class="mini-dot" style="background:${c.color}"></span></div>
+          <span class="mini-zoom">${uIcon("search")}</span></button>
+        ${frames[1] ? `<span class="ct-time-sm" style="background-image:url('${frames[1]}')" role="img" aria-label="Horário da imagem do mini-radar"></span>` : ""}
+      </div>
       <div class="wx-mm"><div class="muted">hoje</div>
         <div><span class="nw">máx <b>${deg(f.daily.temperature_2m_max[0])}</b></span></div>
         <div><span class="nw">mín <b>${deg(f.daily.temperature_2m_min[0])}</b></span></div></div>
     </div>
     ${nowcastHtml(nowcast[c.id])}
-    ${srcLine(`chuva, mini-radar e direção: radar ${SRC.rv}${radarMotion ? ` (imagem às ${hhmm(radarMotion.time)})` : ""}, mm são estimativa ·
-      máx/mín: previsão do tempo ${SRC.om} · mapa ${SRC.osm} · cores: Defesa Civil`)}
+    ${srcLine(`mini-radar: radar de Porto Alegre, imagem da ${SRC.ct} (horário embaixo dele) ·
+      chuva nas próximas 2 h, distâncias, mm e direção: radar ${SRC.rv}${radarMotion ? ` (imagem às ${hhmm(radarMotion.time)})` : ""}, mm são estimativa ·
+      máx/mín: previsão do tempo ${SRC.om} · cores: Defesa Civil`)}
   </article>`;
-  if (nowcast[c.id] && !nowcast[c.id].error) drawMini(box.querySelector("canvas.mini"), c);
+  ctCrop(box.querySelector(".ct-mini"), c);
 
   det.innerHTML = `<article class="card wide-det">
     <div class="det-side">

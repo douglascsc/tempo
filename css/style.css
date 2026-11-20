@@ -352,3 +352,15 @@ canvas.mini { width: 110px; height: 110px; border-radius: 10px; border: 1px soli
 .src-line a { color: inherit; }
 .src-line .u-ic { width: 13px; height: 13px; }
 .card.wide > .src-line, .card.wide-det > .src-line { grid-column: 1 / -1; margin-top: 0; }
+
+/* mini-radar com o recorte da imagem da Climatempo */
+.mini-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
+.ct-mini, .ct-big { position: relative; background-color: #e8eef3; background-repeat: no-repeat; overflow: hidden; }
+.ct-mini { width: 110px; height: 110px; border-radius: 10px; border: 1px solid var(--line); }
+.ct-big { width: 100%; aspect-ratio: 1; border-radius: 10px; margin: 8px 0; }
+.mini-arrow { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mini-dot { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px #000; }
+/* horário recortado da imagem, em tamanho pequeno (escala 0,35) */
+.ct-time-sm { display: block; width: 112px; height: 13px; border-radius: 3px; background-color: #fff; background-repeat: no-repeat;
+  background-size: 700px 490px; background-position: -448px -417px; border: 1px solid var(--line); }

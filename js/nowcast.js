@@ -249,9 +249,11 @@ async function drawMini(cv, c, span = 128) {
 // Mini-radar ampliado numa janela (abre ao tocar no mini-radar do cartão)
 function openMini() {
   const c = CITIES.find(x => x.id === selected), dlg = document.getElementById("miniDlg");
-  dlg.querySelector("h3").textContent = `Radar em volta de ${c.name}` + (radarMotion ? ` · imagem às ${hhmm(radarMotion.time)}` : "");
+  dlg.querySelector("h3").textContent = `Radar em volta de ${c.name}`;
+  dlg.querySelector(".mini-dot").style.background = c.color;
+  dlg.querySelector(".ct-time").style.backgroundImage = `url('${frames[1]}')`;
   dlg.showModal();
-  drawMini(dlg.querySelector("canvas"), c, 192);
+  ctCrop(dlg.querySelector(".ct-big"), c, 360); // ~110 km
 }
 
 function renderRadarMotion() {

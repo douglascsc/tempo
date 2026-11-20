@@ -206,6 +206,25 @@ async function loadRadar() {
   showFrame(frame);
 }
 
+// ----- Mini-radar da Climatempo: recorte da imagem mais recente em volta da cidade -----
+// spanOrig = largura do recorte em pixels da imagem original (2000 px = 6,2° de longitude; 226 px ≈ 70 km)
+function ctCrop(el, c, spanOrig = 226) {
+  if (!el || !frames[1]) return;
+  const w = el.clientWidth || 110, sc = w / spanOrig, bw = 2000 * sc, bh = 1400 * sc, p = cityPos(c);
+  el.style.backgroundImage = `url('${frames[1]}')`;
+  el.style.backgroundSize = `${bw}px ${bh}px`;
+  el.style.backgroundPosition = `${w / 2 - p.x / 100 * bw}px ${w / 2 - p.y / 100 * bh}px`;
+  // seta de onde vem a chuva (movimento calculado pelo RainViewer)
+  const svg = el.querySelector("svg.mini-arrow");
+  if (svg) {
+    if (radarVec) {
+      const L = Math.hypot(radarVec.vx, radarVec.vy), ux = radarVec.vx / L, uy = radarVec.vy / L;
+      svg.innerHTML = `<line x1="${50 - ux * 42}" y1="${50 - uy * 42}" x2="${50 - ux * 9}" y2="${50 - uy * 9}" stroke="#111" stroke-width="3" stroke-dasharray="5 4"/>
+        <polygon points="${50 - ux * 5},${50 - uy * 5} ${50 - ux * 15 - uy * 6},${50 - uy * 15 + ux * 6} ${50 - ux * 15 + uy * 6},${50 - uy * 15 - ux * 6}" fill="#111"/>`;
+    } else svg.innerHTML = "";
+  }
+}
+
 // No celular o radar abre com zoom máximo em Campo Bom + Sapucaia; ao escolher uma cidade, centraliza nela.
 let focusAll = IS_PHONE;
 const FOCUS = CITIES.filter(c => ["cb", "ss"].includes(c.id)); // cidades principais
