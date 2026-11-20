@@ -25,7 +25,27 @@ function chartSummary(c, h) {
     `; maior chance de chuva ${probMax.prob}% às ${hh(probMax.t)}; temperatura de ${Math.round(Math.min(...temps))}° a ${Math.round(Math.max(...temps))}°.`;
 }
 
+// ----- Próximas 12 h em blocos de 1 h (previsão do modelo), mesmas cores e nomes do radar -----
+// mm/h -> escala da Defesa Civil, usando a mesma fórmula do radar (30 dBZ ≈ 2,7 mm/h; 45 dBZ ≈ 24 mm/h; 60 dBZ ≈ 205 mm/h)
+const mmToInt = mm => mm >= 205 ? INT[0] : mm >= 24 ? INT[1] : mm >= 2.7 ? INT[2] : mm >= 0.2 ? INT[3] : [0, "sem chuva", "var(--line)"];
+
+function renderNext12() {
+  const c = CITIES.find(x => x.id === selected), f = forecasts[c.id];
+  if (!f) return;
+  const now = Date.now();
+  const h = f.hourly.time.map((t, i) => ({ t: parseT(t), p: f.hourly.precipitation[i] ?? 0, prob: f.hourly.precipitation_probability[i] ?? 0 }))
+    .filter(x => x.t.getTime() + 3600e3 > now).slice(0, 12);
+  document.getElementById("next12").innerHTML = `
+    <div class="nc-lbl">Próximas 12 h <span class="muted">· previsão do modelo, hora a hora</span></div>
+    <div class="nc-blocks n12">${h.map(x => {
+      const [, lbl, col] = mmToInt(x.p);
+      return `<div title="${fmtMm(x.p)} mm · ${x.prob}%"><div class="muted nc-t">${hh(x.t)}</div><span class="sq" style="background:${col}"></span>
+        <div>${lbl}</div><div class="muted n12-p">${x.prob}%</div></div>`;
+    }).join("")}</div>`;
+}
+
 function renderChart() {
+  renderNext12();
   const c = CITIES.find(x => x.id === selected);
   const f = forecasts[c.id];
   if (!f) return;

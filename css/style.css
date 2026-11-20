@@ -294,3 +294,21 @@ h3.wx-city { font-weight: 400; color: var(--muted); }
 @media (min-width: 601px) { #citySel { display: grid; grid-template-columns: repeat(4, 1fr); } }
 @media (min-width: 1060px) { #citySel { grid-template-columns: repeat(8, 1fr); } #citySel a { padding: 6px 4px; font-size: .88rem; } }
 #citySel a { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+
+/* ===================== Cartão de cima: mini-radar + máx/mín, detalhes do radar ===================== */
+canvas.mini { width: 110px; height: 110px; border-radius: 10px; border: 1px solid var(--line); flex: none; background: var(--bg); }
+.wx-mm { line-height: 1.5; font-size: .95rem; }
+.wx-mm b { font-size: 1.15rem; }
+.nc-sub { margin-top: 2px; font-size: .9rem; }
+.nc-past { margin-top: 2px; }
+.nc-text .alert { margin-top: 8px; }
+
+/* Próximas 12 h: 12 blocos (6 x 2 no celular) */
+.nc-blocks.n12 { grid-template-columns: repeat(12, 1fr); }
+.n12-p { font-size: .72rem; }
+@media (max-width: 700px) {
+  .nc-blocks.n12 { grid-template-columns: repeat(6, 1fr); }
+  .nc-blocks.n12 > div:nth-child(7) { border-left: none; }
+  .nc-blocks.n12 > div:nth-child(n+7) { border-top: 1px solid var(--line); }
+}
+#next12 .skel-blocks { height: 90px; }

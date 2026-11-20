@@ -61,19 +61,46 @@ function estimateShift(A, B, W, H) {
   return { dx: best[0], dy: best[1] };
 }
 
+// intensidade do radar (dBZ) -> chuva em mm/h (fórmula de Marshall-Palmer: Z = 200·R^1,6). É estimativa.
+const dbzToMmH = dbz => dbz < 15 ? 0 : Math.pow(Math.pow(10, dbz / 10) / 200, 1 / 1.6);
+let radarVec = null;     // movimento da chuva em pixels/min (para a seta do mini-radar)
+let radarLatest = null;  // imagem mais nova do radar (canvas) para o mini-radar
+
+// valor de um ponto de uma grade: maior (max) ou média (mean) num raio de r pixels
+function sampleGrid(G, x, y, r = 2, mode = "max") {
+  let m = 0, s = 0, n = 0; x = Math.round(x); y = Math.round(y);
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+    const X = x + i, Y = y + j;
+    if (X < 0 || Y < 0 || X >= G.W || Y >= G.H) continue;
+    const v = G.g[Y * G.W + X]; m = Math.max(m, v); s += v; n++;
+  }
+  return mode === "max" ? m : (n ? s / n : 0);
+}
+
+// média do dBZ dos pixels com chuva num raio (para saber se a chuva se fortalece ou enfraquece)
+function rainMean(G, x, y, r) {
+  let s = 0, n = 0; x = Math.round(x); y = Math.round(y);
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+    if (i * i + j * j > r * r) continue;
+    const X = x + i, Y = y + j;
+    if (X < 0 || Y < 0 || X >= G.W || Y >= G.H) continue;
+    const v = G.g[Y * G.W + X]; if (v >= 15) { s += v; n++; }
+  }
+  return { mean: n ? s / n : 0, n };
+}
+
 async function runNowcast(attempt = 1) {
   try {
     const d = await (await fetchWithTimeout("https://api.rainviewer.com/public/weather-maps.json", 15000)).json();
-    const past = d.radar.past;
-    // Compara a imagem mais nova com as de 10, 20 e 30 min antes e combina os três deslocamentos:
-    // um par só pode errar bastante a velocidade (ex.: 64 x 90 km/h).
-    const newF = past[past.length - 1];
-    const olds = [2, 3, 4].map(k => past[past.length - k]).filter(Boolean);
-    const [N, ...O] = await Promise.all([newF, ...olds].map(f => radarGrid(d.host, f.path)));
+    const past = d.radar.past.slice(-13);         // até 2 h de imagens (1 a cada 10 min)
+    const grids = await Promise.all(past.map(f => radarGrid(d.host, f.path)));
+    const N = grids[grids.length - 1], newF = past[past.length - 1];
+    // Movimento: compara a imagem mais nova com as de 10, 20 e 30 min antes e combina os três
     let sdx = 0, sdy = 0, sdt = 0;
-    olds.forEach((f, k) => {
-      const s = estimateShift(O[k].g, N.g, N.W, N.H);
-      if (s) { sdx += s.dx; sdy += s.dy; sdt += (newF.time - f.time) / 60; }
+    [2, 3, 4].forEach(k => {
+      const i = past.length - k; if (i < 0) return;
+      const s = estimateShift(grids[i].g, N.g, N.W, N.H);
+      if (s) { sdx += s.dx; sdy += s.dy; sdt += (newF.time - past[i].time) / 60; }
     });
     const shift = sdt > 0;
     const vx = shift ? sdx / sdt : 0, vy = shift ? sdy / sdt : 0; // pixels por minuto
@@ -81,41 +108,80 @@ async function runNowcast(attempt = 1) {
     const ageMin = Math.max(0, Math.round((Date.now() / 1000 - newF.time) / 60));
     radarMotion = { time: new Date(newF.time * 1000), ageMin, speed,
       from: shift && speed >= 5 ? dirName(Math.atan2(-vx, vy) * 180 / Math.PI) : null };
-    // guarda a imagem mais nova e o vetor de movimento para desenhar a previsão no mapa
+    radarVec = shift && speed >= 5 ? { vx, vy } : null;
+    radarLatest = { cv: N.cv, ox: N.ox, oy: N.oy };
     rvFuture = shift ? { url: N.cv.toDataURL(), ox: N.ox, oy: N.oy, W: N.W, H: N.H, vx, vy,
       t0: newF.time * 1000, speed, from: radarMotion.from } : null;
     buildFuture();
 
-    const at = (x, y, r = 2) => { // maior dBZ num raio de r pixels
-      let m = 0; x = Math.round(x); y = Math.round(y);
-      for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
-        const X = x + i, Y = y + j;
-        if (X >= 0 && Y >= 0 && X < N.W && Y < N.H) m = Math.max(m, N.g[Y * N.W + X]);
-      }
-      return m;
-    };
+    const R50 = Math.round(50 / PX_KM); // 50 km em pixels
+    const i20 = Math.max(0, past.length - 3), dt20 = (newF.time - past[i20].time) / 60;
     CITIES.forEach(c => {
       const cx = lonToX(c.lon) - N.ox, cy = latToY(c.lat) - N.oy;
-      // 1) tendência: a chuva que chega daqui t min está hoje "rio acima" no vetor de movimento
-      const blocks = [0, 0, 0, 0];
-      let firstMin = null, firstDbz = 0;
-      for (let t = 0; t < 60; t++) {
-        const k = t + ageMin;
-        const v = at(cx - vx * k, cy - vy * k);
-        blocks[Math.floor(t / 15)] = Math.max(blocks[Math.floor(t / 15)], v);
-        if (v >= 15 && firstMin == null) firstMin = t;
-        if (firstMin != null && t < firstMin + 15) firstDbz = Math.max(firstDbz, v);
+      const up = k => [cx - vx * k, cy - vy * k]; // onde está hoje a chuva que chega daqui k min
+
+      // 1) próxima hora minuto a minuto: blocos, início, fim e mm
+      const blocks = [0, 0, 0, 0], v = [];
+      let firstMin = null, firstDbz = 0, mm = 0;
+      for (let t = 0; t < 90; t++) {
+        const [x, y] = up(t + ageMin);
+        v[t] = sampleGrid(N, x, y, 2, "max");
+        if (t < 60) {
+          blocks[Math.floor(t / 15)] = Math.max(blocks[Math.floor(t / 15)], v[t]);
+          mm += dbzToMmH(sampleGrid(N, x, y, 1, "mean")) / 60;
+          if (v[t] >= 15 && firstMin == null) firstMin = t;
+          if (firstMin != null && t < firstMin + 15) firstDbz = Math.max(firstDbz, v[t]);
+        }
       }
-      // 2) chuva mais próxima na imagem mais recente
-      let best = null;
+      // fim: primeiro momento após o início com 5 min seguidos sem chuva
+      let endMin = null;
+      if (firstMin != null) for (let t = firstMin + 1; t < 86; t++) {
+        if (v.slice(t, t + 5).every(x => x < 15)) { endMin = t; break; }
+      }
+
+      // 3) fortalecendo ou enfraquecendo: a chuva que chega em ~15 min, agora x 20 min atrás
+      let trend = null;
+      if (radarVec) {
+        const [px, py] = up(ageMin + 15);
+        const now = rainMean(N, px, py, 8), before = rainMean(grids[i20], px - vx * dt20, py - vy * dt20, 8);
+        if (now.n >= 15 && before.n >= 15) {
+          const dd = now.mean - before.mean;
+          trend = dd >= 3 ? "up" : dd <= -3 ? "down" : "same";
+        }
+      }
+
+      // 4) chuva estimada nas últimas 2 h sobre a cidade
+      let pastMm = 0;
+      grids.forEach((G, i) => {
+        const dtm = i < grids.length - 1 ? (past[i + 1].time - past[i].time) / 60 : 10;
+        pastMm += dbzToMmH(sampleGrid(G, cx, cy, 1, "mean")) * dtm / 60;
+      });
+      const pastHours = Math.round((newF.time - past[0].time) / 3600 + 1 / 6);
+
+      // 2) chuva mais próxima, 5) célula forte (≥ 45 dBZ) até 50 km e 9) chuva espalhada ou isolada
+      let best = null, cell = null, wet = 0, tot = 0;
       const R = 113; // ~120 km
       for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
         const X = Math.round(cx) + i, Y = Math.round(cy) + j;
-        if (X < 0 || Y < 0 || X >= N.W || Y >= N.H || N.g[Y * N.W + X] < 15) continue;
-        const dist = Math.hypot(i, j);
-        if (dist <= R && (!best || dist < best.dist)) best = { dist, i, j };
+        if (X < 0 || Y < 0 || X >= N.W || Y >= N.H) continue;
+        const val = N.g[Y * N.W + X], dist = Math.hypot(i, j);
+        if (dist <= R50) { tot++; if (val >= 15) wet++; }
+        if (val < 15 || dist > R) continue;
+        if (!best || dist < best.dist) best = { dist, i, j };
+        if (val >= 45 && dist <= R50) {
+          if (!cell || dist < cell.dist) cell = { dist, i, j, max: Math.max(val, cell?.max || 0) };
+          else cell.max = Math.max(cell.max, val);
+        }
       }
-      nowcast[c.id] = { blocks, firstMin, firstDbz,
+      if (cell) { // chega à cidade? procura quando a parte forte passa sobre ela
+        cell.km = cell.dist * PX_KM;
+        cell.dir = dirName(Math.atan2(cell.i, -cell.j) * 180 / Math.PI);
+        cell.eta = null;
+        for (let t = 0; t < 90; t++) { const [x, y] = up(t + ageMin); if (sampleGrid(N, x, y, 3, "max") >= 45) { cell.eta = t; break; } }
+      }
+
+      nowcast[c.id] = { blocks, firstMin, firstDbz, endMin, mm, trend, pastMm, pastHours, cell,
+        spread: tot ? wet / tot : 0,
         nearKm: best ? best.dist * PX_KM : null,
         nearDir: best ? dirName(Math.atan2(best.i, -best.j) * 180 / Math.PI) : null };
     });
@@ -129,12 +195,54 @@ async function runNowcast(attempt = 1) {
   renderRadarMotion();
 }
 
+// ----- 8) Mini-radar: recorte de ~70 km em volta da cidade, com mapa de fundo e seta -----
+const osmCache = new Map();
+function osmTile(z, x, y) {
+  const k = `${z}/${x}/${y}`;
+  if (!osmCache.has(k)) {
+    const img = new Image(); img.crossOrigin = "anonymous";
+    img.src = `https://tile.openstreetmap.org/${k}.png`;
+    osmCache.set(k, img.decode().then(() => img).catch(() => null));
+  }
+  return osmCache.get(k);
+}
+
+async function drawMini(cv, c) {
+  if (!cv || !radarLatest) return;
+  const ctx = cv.getContext("2d"), S = cv.width;          // canvas 256 px = 128 px do mapa no zoom 8 (~68 km)
+  const cx8 = lonToX(c.lon) * 2, cy8 = latToY(c.lat) * 2, x0 = cx8 - 64, y0 = cy8 - 64, sc = S / 128;
+  const tiles = [];
+  for (let tx = Math.floor(x0 / 256); tx <= Math.floor((x0 + 128) / 256); tx++)
+    for (let ty = Math.floor(y0 / 256); ty <= Math.floor((y0 + 128) / 256); ty++)
+      tiles.push(osmTile(8, tx, ty).then(img => img && ctx.drawImage(img, (tx * 256 - x0) * sc, (ty * 256 - y0) * sc, 256 * sc, 256 * sc)));
+  ctx.fillStyle = "#e8eef3"; ctx.fillRect(0, 0, S, S);
+  await Promise.all(tiles);
+  // chuva (zoom 7) por cima do mapa
+  const r = radarLatest, sx = lonToX(c.lon) - r.ox - 32, sy = latToY(c.lat) - r.oy - 32;
+  ctx.globalAlpha = 0.8; ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(r.cv, sx, sy, 64, 64, 0, 0, S, S);
+  ctx.globalAlpha = 1;
+  // seta: de onde vem a chuva até a cidade
+  if (radarVec) {
+    const L = Math.hypot(radarVec.vx, radarVec.vy), ux = radarVec.vx / L, uy = radarVec.vy / L;
+    const ex = S / 2 - ux * 16, ey = S / 2 - uy * 16, bx = S / 2 - ux * 96, by = S / 2 - uy * 96;
+    ctx.strokeStyle = "#111"; ctx.fillStyle = "#111"; ctx.lineWidth = 5; ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(ex + ux * 6, ey + uy * 6);
+    ctx.lineTo(ex - ux * 14 - uy * 10, ey - uy * 14 + ux * 10); ctx.lineTo(ex - ux * 14 + uy * 10, ey - uy * 14 - ux * 10);
+    ctx.closePath(); ctx.fill();
+  }
+  // cidade
+  ctx.beginPath(); ctx.arc(S / 2, S / 2, 10, 0, 7); ctx.fillStyle = c.color; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = "#fff"; ctx.stroke();
+  ctx.font = "16px system-ui, sans-serif"; ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillText("© OSM", S - 58, S - 8);
+}
+
 function renderRadarMotion() {
   const el = document.getElementById("radarMotion");
   if (!radarMotion) { el.textContent = ""; return; }
   const m = radarMotion;
   const mov = m.from ? ` · chuva vindo do <b>${m.from}</b> a <b>${Math.round(m.speed)} km/h</b>`
     : " · movimento da chuva: parado ou chuva insuficiente para estimar";
-  el.innerHTML = `${uIcon("compass")} Radar RainViewer · imagem <b>${atAgo(m.time)}</b>${mov} ${infoBtn("ncNote")}`;
+  el.innerHTML = `${uIcon("compass")} Radar RainViewer · imagem <b>${atAgo(m.time)}</b>${mov}`;
 }
-

@@ -135,8 +135,8 @@ const INT = [ // dBZ mínimo -> rótulo e cor
 const intensity = dbz => INT.find(([m]) => dbz >= m) || [0, "sem chuva", "var(--line)"];
 
 // Resposta do radar em duas partes: texto (o que vem aí) e linha do tempo (4 blocos de 15 min)
-function nowcastHtml(n, confHtml = "") {
-  if (!n) return `<div class="nc-text"><div class="skel-line"></div><div class="skel-line short"></div></div>
+function nowcastHtml(n) {
+  if (!n) return `<div class="nc-text"><div class="skel-line"></div><div class="skel-line short"></div><div class="skel-line short"></div></div>
     <div class="nc-tl"><div class="nc-blocks skel-blocks"></div></div>`;
   if (n.error) return `<div class="nc-text muted">Radar indisponível no momento. <button class="linkbtn" onclick="refresh()">Tentar de novo</button></div><div class="nc-tl"></div>`;
   let head;
@@ -145,12 +145,41 @@ function nowcastHtml(n, confHtml = "") {
   else if (n.firstMin === 0) head = `${wIcon("rain", "w-in")} <b>Possível chuva agora</b> — ${intensity(n.firstDbz)[1]}`;
   else if (n.firstMin != null) head = `${wIcon("rain", "w-in")} <b>Possível chuva em ~${n.firstMin} min</b> — ${intensity(n.firstDbz)[1]}`;
   else head = `${wIcon("partly", "w-in")} <b>Sem sinal de chuva</b> na próxima hora`;
+
+  // 1) até quando · 2) quantos mm · 3) se fortalecendo ou enfraquecendo
+  const sub = [];
+  if (n.firstMin != null) {
+    sub.push(n.endMin != null ? `até ~${hhmm(new Date(Date.now() + n.endMin * 60e3))}` : "por mais de 1 h");
+    if (n.mm >= 0.1) sub.push(`~${fmtMm(n.mm)} mm na próxima hora`);
+  }
+  if (n.trend === "up") sub.push(`${uIcon("up")} se intensificando`);
+  else if (n.trend === "down") sub.push(`${uIcon("down")} enfraquecendo`);
+
+  // 9) espalhada ou isolada (raio de 50 km)
+  const spread = n.spread >= 0.4 ? "chuva espalhada pela região" : n.spread >= 0.1 ? "chuva em parte da região"
+    : n.spread > 0.005 ? "pancadas isoladas na região" : "";
   const near = n.nearKm == null ? "nenhuma num raio de 120 km"
-    : n.nearKm < 2 ? "sobre a cidade" : `<b>${Math.round(n.nearKm)} km</b> ao ${n.nearDir}`;
+    : n.nearKm < 2 ? (n.firstMin === 0 ? "sobre a cidade" : "sobre a cidade na última imagem, já passando") : `<b>${Math.round(n.nearKm)} km</b> ao ${n.nearDir}`;
+
+  // 4) quanto choveu nas últimas ~2 h
+  const pastTxt = n.pastMm >= 0.1 ? `Choveu ~${fmtMm(n.pastMm)} mm nas últimas ${n.pastHours} h` : `Sem chuva nas últimas ${n.pastHours} h`;
+
+  // 5) célula forte (intensa ou mais) até 50 km
+  let cellHtml = "";
+  if (n.cell) {
+    const k = n.cell, hail = k.max >= 55;
+    const what = `${hail ? "Célula muito forte" : "Célula de chuva intensa"}`;
+    const where = k.km < 2 ? "sobre a cidade" : `a ${Math.round(k.km)} km ao ${k.dir}`;
+    const when = k.km < 2 ? "" : k.eta != null ? `, chega em ~${k.eta} min` : ", sem previsão de chegar aqui";
+    cellHtml = `<div class="alert ${hail || k.eta != null ? "lv2" : "lv1"}">${uIcon("alert")} <b>${what}</b> ${where}${when}${hail ? " · possível granizo" : ""}</div>`;
+  }
+
   return `<div class="nc-text">
       <div class="nc-head">${head} <span class="src">· radar</span></div>
-      <div class="nc-near">Chuva mais próxima: ${near}</div>
-      ${confHtml}
+      ${sub.length ? `<div class="nc-sub">${sub.join(" · ")}</div>` : ""}
+      <div class="nc-near">Chuva mais próxima: ${near}${spread ? ` · ${spread}` : ""}</div>
+      <div class="nc-past muted">${pastTxt} (estimativa do radar)</div>
+      ${cellHtml}
     </div>
     <div class="nc-tl">
       <div class="nc-lbl">Próxima hora em min (tendência)${radarMotion ? ` <span class="muted">· radar às ${hhmm(radarMotion.time)}</span>` : ""}</div>
@@ -171,15 +200,18 @@ function renderCards() {
     ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
     : (a ? `<div class="sub">${uIcon("wind")} Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : `<div class="sub">Sem alertas nas próximas 12 h</div>`);
 
+  // do modelo fica só máx/mín do dia; o resto do cartão vem do radar
   box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
     <h3 class="vh">${c.name}</h3>
     <div class="wx-head">
-      <div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
-      <div class="wx-name"><div class="muted">agora</div>
-        <div class="muted"><span class="nw">máx ${deg(f.daily.temperature_2m_max[0])}</span> / <span class="nw">mín ${deg(f.daily.temperature_2m_min[0])}</span></div></div>
+      <canvas class="mini" width="256" height="256" role="img" aria-label="Mini-radar em volta de ${c.name}"></canvas>
+      <div class="wx-mm"><div class="muted">hoje</div>
+        <div><span class="nw">máx <b>${deg(f.daily.temperature_2m_max[0])}</b></span></div>
+        <div><span class="nw">mín <b>${deg(f.daily.temperature_2m_min[0])}</b></span></div></div>
     </div>
     ${nowcastHtml(nowcast[c.id])}
   </article>`;
+  if (nowcast[c.id] && !nowcast[c.id].error) drawMini(box.querySelector("canvas.mini"), c);
 
   det.innerHTML = `<article class="card wide-det">
     <div class="det-side">
