@@ -78,6 +78,11 @@ section { margin-bottom: 20px; }
 .flood-bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 4px; }
 .flood-bar > div { height: 100%; border-radius: 99px; }
 .spark { width: 100%; height: 70px; display: block; margin: 4px 0; }
+.spark-wrap { display: flex; gap: 6px; margin: 4px 0; }
+.spark-y { position: relative; flex: 0 0 auto; width: 3.6em; height: 70px; font-size: .75rem; color: var(--muted); text-align: right; }
+.spark-y span { position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap; }
+.spark-wrap .spark { flex: 1; min-width: 0; margin: 0; }
+.spark line { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .spark polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 #river a, footer a { color: inherit; }
 #srcTabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }

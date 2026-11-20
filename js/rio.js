@@ -64,6 +64,10 @@ function renderRiver(rows, others) {
   // mini gráfico dos últimos 3 dias
   const W = 600, H = 70, min = Math.min(...rows.map(r => r.lvl)), max = Math.max(...rows.map(r => r.lvl));
   const t0 = rows[0].t, t1 = last.t, span = Math.max(1, max - min);
+  const yOf = v => H - 6 - (v - min) / span * (H - 12);
+  const ticks = [max, (max + min) / 2, min]; // eixo Y: máximo, meio e mínimo
+  const yAxis = ticks.map(v => `<span style="top:${yOf(v).toFixed(1)}px">${fmtM(v)} m</span>`).join("");
+  const grid = ticks.map(v => `<line x1="0" x2="${W}" y1="${yOf(v).toFixed(1)}" y2="${yOf(v).toFixed(1)}"/>`).join("");
   const pts = rows.map(r => `${((r.t - t0) / (t1 - t0 || 1) * W).toFixed(1)},${(H - 6 - (r.lvl - min) / span * (H - 12)).toFixed(1)}`).join(" ");
 
   // aviso antecipado: água subindo rio acima tende a chegar a Campo Bom horas depois
@@ -95,7 +99,8 @@ function renderRiver(rows, others) {
         : `faltam <b>${fmtM(FLOOD_CM - last.lvl)} m</b> (${Math.round(last.lvl / FLOOD_CM * 100)}% da cota)`}</div>
       <div class="flood-bar"><div style="width:${Math.min(100, last.lvl / FLOOD_CM * 100)}%;background:${last.lvl >= FLOOD_CM ? "#e5534b" : last.lvl >= FLOOD_CM * 0.8 ? "#d4a72c" : "var(--accent)"}"></div></div>
     </div>
-    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}"/></svg>
+    <div class="spark-wrap"><div class="spark-y" aria-hidden="true">${yAxis}</div>
+      <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Nível do rio nos últimos 3 dias, de ${fmtM(min)} m a ${fmtM(max)} m">${grid}<polyline points="${pts}"/></svg></div>
     <div class="muted">Últimos 3 dias · de ${fmtM(min)} m a ${fmtM(max)} m</div>
     ${upAlert}
     <details class="rdet" ${riverOpen ? "open" : ""} ontoggle="riverOpen = this.open">
