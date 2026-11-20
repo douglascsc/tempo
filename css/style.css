@@ -289,3 +289,7 @@ h3.wx-city { font-weight: 400; color: var(--muted); }
   #citySel::-webkit-scrollbar { display: none; }
   #citySel button { flex: 0 0 auto; min-height: 40px; padding: 4px 12px; font-size: .88rem; }
 }
+
+/* 8 cidades: no computador o seletor quebra em mais de uma linha se precisar */
+@media (min-width: 601px) { #citySel { display: grid; grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1060px) { #citySel { grid-template-columns: repeat(8, 1fr); } #citySel button { padding: 6px 4px; font-size: .88rem; } }

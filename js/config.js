@@ -6,6 +6,8 @@ const CITIES = [
   { id: "poa", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },
   { id: "gr",  name: "Gramado",        short: "Gramado",   lat: -29.3789, lon: -50.8742, color: "#b5651d" },
   { id: "tq",  name: "Taquara",        short: "Taquara",   lat: -29.6505, lon: -50.7808, color: "#3a86ff" },
+  { id: "fi",  name: "Fialho (Taquara)", short: "Fialho",  lat: -29.7467, lon: -50.8966, color: "#2b9348" },
+  { id: "gv",  name: "Gravataí",       short: "Gravataí",  lat: -29.9440, lon: -50.9919, color: "#ef476f" },
 ];
 
 // Área coberta pela imagem do radar (projeção lat/lon simples)
