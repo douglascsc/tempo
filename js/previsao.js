@@ -198,11 +198,11 @@ function renderCards() {
 
 // ----- Seletor de cidade: controla os cartões, o gráfico e o radar -----
 function renderCitySel() {
+  // cada cidade é um link de verdade (#campo-bom, #gramado...): dá para copiar e compartilhar
   document.getElementById("citySel").innerHTML = CITIES.map(c =>
-    `<button data-id="${c.id}" aria-pressed="${c.id === selected}"><span class="dot" style="background:${c.color}"></span>${c.short || c.name}</button>`).join("");
-  document.querySelectorAll("#citySel button").forEach(b => b.onclick = () => selectCity(b.dataset.id));
+    `<a href="#${c.slug}" data-id="${c.id}"${c.id === selected ? ' aria-current="true"' : ""}><span class="dot" style="background:${c.color}"></span>${c.short || c.name}</a>`).join("");
   // no celular o seletor desliza: mantém a cidade escolhida visível
-  document.querySelector('#citySel [aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  document.querySelector('#citySel [aria-current="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 // No celular, deslizar o dedo sobre o cartão troca para a cidade seguinte/anterior
@@ -224,6 +224,10 @@ function selectCity(id) {
   selected = id;
   focusAll = false;
   localStorageSet("cidade", id);
+  const c = CITIES.find(x => x.id === id);
+  // endereço e título da aba acompanham a cidade (sem criar histórico a cada troca)
+  if (location.hash.slice(1) !== c.slug) history.replaceState(null, "", "#" + c.slug);
+  document.title = `Vai chover em ${c.name}?`;
   renderCitySel();
   if (Object.keys(forecasts).length) { renderCards(); renderChart(); }
   applyZoom();

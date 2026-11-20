@@ -1,13 +1,13 @@
 // ===================== Configuração =====================
 const CITIES = [
-  { id: "cb", name: "Campo Bom",       short: "Campo Bom", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
-  { id: "ss", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
-  { id: "nt", name: "Nova Tramandaí",  short: "Tramandaí", lat: -29.9925, lon: -50.1380, color: "#00e5ff" },
-  { id: "poa", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },
-  { id: "gr",  name: "Gramado",        short: "Gramado",   lat: -29.3789, lon: -50.8742, color: "#b5651d" },
-  { id: "tq",  name: "Taquara",        short: "Taquara",   lat: -29.6505, lon: -50.7808, color: "#3a86ff" },
-  { id: "fi",  name: "Fialho (Taquara)", short: "Fialho",  lat: -29.7467, lon: -50.8966, color: "#2b9348" },
-  { id: "gv",  name: "Gravataí",       short: "Gravataí",  lat: -29.9440, lon: -50.9919, color: "#ef476f" },
+  { id: "cb", slug: "campo-bom", name: "Campo Bom",       short: "Campo Bom", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
+  { id: "ss", slug: "sapucaia", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
+  { id: "nt", slug: "tramandai", name: "Nova Tramandaí",  short: "Tramandaí", lat: -29.9925, lon: -50.1380, color: "#00e5ff" },
+  { id: "poa", slug: "porto-alegre", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },
+  { id: "gr", slug: "gramado",  name: "Gramado",        short: "Gramado",   lat: -29.3789, lon: -50.8742, color: "#b5651d" },
+  { id: "tq", slug: "taquara",  name: "Taquara",        short: "Taquara",   lat: -29.6505, lon: -50.7808, color: "#3a86ff" },
+  { id: "fi", slug: "fialho",  name: "Fialho (Taquara)", short: "Fialho",  lat: -29.7467, lon: -50.8966, color: "#2b9348" },
+  { id: "gv", slug: "gravatai",  name: "Gravataí",       short: "Gravataí",  lat: -29.9440, lon: -50.9919, color: "#ef476f" },
 ];
 
 // Área coberta pela imagem do radar (projeção lat/lon simples)
@@ -18,7 +18,14 @@ const REFRESH_MS = 5 * 60 * 1000;  // 5 minutos (mesmo ritmo do radar)
 
 const RAIN_MIN = 0.1;  // mm em 15 min para considerar "chuva"
 let forecasts = {};    // id -> dados da Open-Meteo
-let selected = localStorageGet("cidade") || "cb";
+// Link direto para a cidade: douglasc.top/tempo/#gramado (também aceita ?cidade=gramado).
+// Sem link, abre a última cidade vista neste aparelho.
+function cityFromUrl() {
+  const key = (location.hash.slice(1) || new URLSearchParams(location.search).get("cidade") || "").toLowerCase();
+  return CITIES.find(c => c.slug === key || c.id === key)?.id || null;
+}
+const FROM_LINK = cityFromUrl();
+let selected = FROM_LINK || localStorageGet("cidade") || "cb";
 
 // Textos de ajuda que no celular ficam escondidos atrás de um botão ⓘ
 const openInfo = new Set();

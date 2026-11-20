@@ -41,6 +41,10 @@ document.getElementById("zoomIcon").innerHTML = uIcon("search");
 if (!CITIES.some(c => c.id === selected)) selected = CITIES[0].id;
 renderCitySel();
 updateRiver();
+if (FROM_LINK) { focusAll = false; } // link de uma cidade: radar centraliza nela
+document.title = `Vai chover em ${CITIES.find(c => c.id === selected).name}?`;
+// clicar num link do seletor (ou mudar o # do endereço) troca a cidade
+addEventListener("hashchange", () => { const id = cityFromUrl(); if (id && id !== selected) selectCity(id); });
 buildMarkers();
 // no celular o radar já abre aproximado em Campo Bom + Sapucaia
 if (IS_PHONE) document.getElementById("zoom").value = 4; // zoom máximo
