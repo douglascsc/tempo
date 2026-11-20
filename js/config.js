@@ -1,8 +1,8 @@
 // ===================== Configuração =====================
 const CITIES = [
-  { id: "cb", name: "Campo Bom",       lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
-  { id: "ss", name: "Sapucaia do Sul", lat: -29.8276, lon: -51.1450, color: "#e040fb" },
-  { id: "nt", name: "Nova Tramandaí",  lat: -29.9925, lon: -50.1380, color: "#00e5ff" },
+  { id: "cb", name: "Campo Bom",       short: "Campo Bom", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
+  { id: "ss", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
+  { id: "nt", name: "Nova Tramandaí",  short: "Tramandaí", lat: -29.9925, lon: -50.1380, color: "#00e5ff" },
 ];
 
 // Área coberta pela imagem do radar (projeção lat/lon simples)
@@ -27,7 +27,24 @@ function toggleInfo(id) {
 function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
 
+const IS_PHONE = matchMedia("(max-width: 600px)").matches;
+const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// fetch com tempo limite: uma fonte lenta não pode travar a página
+async function fetchWithTimeout(url, ms = 20000) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(ms) });
+  if (!res.ok) throw new Error(`${new URL(url).host} respondeu ${res.status}`);
+  return res;
+}
+
 const hhmm = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+// formato único de horário em toda a página: "às 13:50 (há 6 min)"
+function agoTxt(d) {
+  const min = Math.max(0, Math.round((Date.now() - d) / 60000));
+  if (min < 60) return `há ${min} min`;
+  return `há ${Math.floor(min / 60)} h${min % 60 ? " " + String(min % 60).padStart(2, "0") : ""}`;
+}
+const atAgo = d => `às ${hhmm(d)} (${agoTxt(d)})`;
 const hh = d => d.getHours() + "h";
 const fmtMm = v => v < 1 ? v.toFixed(1).replace(".", ",") : Math.round(v).toString();
 // Open-Meteo devolve horário local sem fuso; a página assume que quem abre está no mesmo fuso (Brasília)

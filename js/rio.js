@@ -50,7 +50,7 @@ async function loadRiver() {
     fetchStation(RIVER_STATION, 3, 30000), ...RIVER_OTHERS.map(s => fetchStation(s.code, 2, 15000)),
   ]);
   if (main.status !== "fulfilled") {
-    box.innerHTML = `<h2>🌊 Rio dos Sinos em Campo Bom</h2><div class="muted">Não foi possível buscar os dados da ANA (${main.reason.message}).</div>`;
+    box.innerHTML = `<h2>🌊 Rio dos Sinos em Campo Bom</h2><div class="muted">Não foi possível buscar os dados da ANA (${main.reason.message}). <button class="linkbtn" onclick="loadRiver()">Tentar de novo</button></div>`;
     return;
   }
   renderRiver(main.value, others.map((r, i) => ({ ...RIVER_OTHERS[i], stats: r.status === "fulfilled" ? riverStats(r.value, 5) : null })));
@@ -85,7 +85,7 @@ function renderRiver(rows, others) {
   document.getElementById("river").innerHTML = `
     <h2>🌊 Rio dos Sinos em Campo Bom</h2>
     <div class="river-grid">
-      <div><div class="big">${fmtM(last.lvl)} m</div><div class="muted">nível às ${hhmm(last.t)} (há ${s.age} min)</div></div>
+      <div><div class="big">${fmtM(last.lvl)} m</div><div class="muted">nível ${atAgo(last.t)}</div></div>
       <div><div class="big">${s.trend[0]} ${s.trend[1]}</div><div class="muted">${fmtCm(s.d6)} em 6 h · ${fmtCm(s.d24)} em 24 h</div></div>
       <div><div class="big">${fmtMm(rain24)} mm</div><div class="muted">chuva medida na estação em 24 h</div></div>
     </div>

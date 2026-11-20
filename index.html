@@ -3,10 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vai chover?</title>
+<title>Vai chover? · Campo Bom e Sapucaia</title>
+<meta name="description" content="Chuva na próxima hora pelo radar, previsão de 5 dias e nível do Rio dos Sinos para Campo Bom, Sapucaia do Sul e Nova Tramandaí.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☔</text></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 <main>
@@ -15,8 +19,13 @@
     <span class="muted" id="updated">Carregando…</span>
   </header>
 
+  <!-- Seletor de cidade: controla gráfico, radar e cartões -->
+  <nav id="citySel" aria-label="Escolher cidade"></nav>
+
   <!-- 1. Resposta direta: tempo agora + próxima hora -->
-  <section id="cards" class="cardgrid"></section>
+  <section id="cards" class="cardgrid" aria-label="Tempo agora e próxima hora">
+    <div class="card skel"></div><div class="card skel"></div><div class="card skel"></div>
+  </section>
   <div class="swipe-hint">← deslize para ver as outras cidades →</div>
 
   <!-- 2. Radar -->
@@ -32,32 +41,39 @@
     <div id="rvMap" hidden></div>
     <div id="radarBox">
       <div id="radarLayer">
-        <img id="radarImg" alt="Radar meteorológico de Porto Alegre">
+        <img id="radarImg" width="2000" height="1400" alt="Radar meteorológico de Porto Alegre com a chuva na região">
         <div id="markers"></div>
       </div>
     </div>
     <div id="radarControls">
-      <button id="playBtn" title="Play/Pause">⏸️</button>
-      <button id="prevBtn" title="Anterior">⏮️</button>
-      <button id="nextBtn" title="Próxima">⏭️</button>
-      <select id="span" title="Período da animação">
+      <button id="playBtn" title="Play/Pause" aria-label="Tocar ou pausar a animação">⏸️</button>
+      <button id="prevBtn" title="Anterior" aria-label="Quadro anterior">⏮️</button>
+      <button id="nextBtn" title="Próxima" aria-label="Próximo quadro">⏭️</button>
+      <select id="span" title="Período da animação" aria-label="Período da animação">
         <option value="15">Últimos 15 min</option>
         <option value="120">Últimas 2 h</option>
       </select>
-      <input type="range" id="frame" min="0" max="3" value="3">
-      <label class="zoom">🔍 <input type="range" id="zoom" min="1" max="4" step="0.1" value="1"></label>
+      <input type="range" id="frame" min="0" max="3" value="3" aria-label="Momento da animação do radar">
+      <label class="zoom">🔍 <input type="range" id="zoom" min="1" max="4" step="0.1" value="1" aria-label="Zoom do radar"></label>
     </div>
   </section>
 
   <!-- 1b. Detalhes por cidade (modelo, alertas, 5 dias) -->
-  <section id="details" class="cardgrid"></section>
+  <section id="details" class="cardgrid" aria-label="Previsão do modelo, alertas e 5 dias">
+    <div class="card skel skel-sm"></div><div class="card skel skel-sm"></div><div class="card skel skel-sm"></div>
+  </section>
   <div class="swipe-hint">← deslize →</div>
 
   <!-- 3. Gráfico -->
   <section class="panel">
-    <h2 id="chartTitle">Próximas 48 h</h2>
-    <div id="dryWindow"></div>
-    <div id="chartWrap"><svg id="chart" viewBox="0 0 900 280" preserveAspectRatio="none"></svg></div>
+    <div class="chart-head">
+      <h2 id="chartTitle">Próximas horas</h2>
+      <div id="chartRange" role="group" aria-label="Período do gráfico">
+        <button data-h="24">24 h</button><button data-h="48">48 h</button>
+      </div>
+    </div>
+    <div id="dryWindow">&nbsp;</div>
+    <div id="chartWrap"><svg id="chart" role="img" aria-label="Gráfico de chuva e temperatura"></svg></div>
     <div class="legend">
       <span class="lg-rain">Chuva (mm/h)</span>
       <span class="lg-temp">Temperatura (°C)</span>
@@ -67,7 +83,8 @@
   </section>
 
   <!-- Rio dos Sinos -->
-  <section class="panel" id="river"><h2>🌊 Rio dos Sinos em Campo Bom</h2><div class="muted">Carregando…</div></section>
+  <section class="panel" id="river"><h2>🌊 Rio dos Sinos em Campo Bom</h2>
+    <div class="skel-line"></div><div class="skel-line"></div><div class="skel-line short"></div><div class="skel-box"></div></section>
 
   <footer>
     Previsão: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
@@ -76,12 +93,12 @@
   </footer>
 </main>
 
-<script src="js/config.js?v=3"></script>
-<script src="js/previsao.js?v=3"></script>
-<script src="js/grafico.js?v=3"></script>
-<script src="js/radar.js?v=3"></script>
-<script src="js/nowcast.js?v=3"></script>
-<script src="js/rio.js?v=3"></script>
-<script src="js/main.js?v=3"></script>
+<script src="js/config.js?v=4"></script>
+<script src="js/previsao.js?v=4"></script>
+<script src="js/grafico.js?v=4"></script>
+<script src="js/radar.js?v=4"></script>
+<script src="js/nowcast.js?v=4"></script>
+<script src="js/rio.js?v=4"></script>
+<script src="js/main.js?v=4"></script>
 </body>
 </html>

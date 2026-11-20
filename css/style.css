@@ -97,9 +97,9 @@ section { margin-bottom: 20px; }
 label.zoom { display: flex; align-items: center; gap: 6px; font-size: .9rem; }
 
 /* 3. Gráfico */
-#chartWrap { width: 100%; overflow-x: auto; }
-#chart { display: block; width: 100%; min-width: 600px; height: 280px; }
-#chart text { fill: var(--muted); font-size: 11px; }
+#chartWrap { width: 100%; }
+#chart { display: block; width: 100%; height: 280px; }
+#chart text { fill: var(--muted); font-size: 12px; }
 .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; margin-top: 6px; color: var(--muted); }
 .legend span::before { content: ""; display: inline-block; width: 14px; height: 4px; margin-right: 5px; vertical-align: middle; }
 .lg-rain::before { background: var(--rain); height: 10px !important; }
@@ -147,7 +147,6 @@ footer a { color: inherit; }
   .river-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .river-grid .big { font-size: 1.05rem; }
   .river-grid .muted { font-size: .72rem; }
-  #chart { min-width: 560px; height: 240px; }
 }
 .swipe-hint { display: none; text-align: center; font-size: .78rem; color: var(--muted); margin: -12px 0 14px; }
 
@@ -165,4 +164,53 @@ footer a { color: inherit; }
     font-size: 14px; line-height: 1; cursor: pointer; vertical-align: middle; }
   .phone-info { display: none; }
   .phone-info.show { display: block; margin-top: 4px; }
+}
+
+/* ===================== Seletor de cidade (fica preso no topo ao rolar) ===================== */
+#citySel { position: sticky; top: 0; z-index: 1100; display: flex; gap: 6px; padding: 8px 0; margin-bottom: 8px;
+  background: var(--bg); }
+#citySel button { flex: 1; min-height: 44px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font: inherit; font-size: .92rem; cursor: pointer; white-space: nowrap; }
+#citySel button[aria-pressed="true"] { border: 2px solid var(--accent); font-weight: 600; }
+#citySel .dot { margin-right: 6px; }
+h3.wx-city, h3.city { margin: 0; font-size: inherit; }
+h3.wx-city { font-weight: 400; color: var(--muted); }
+
+/* resposta única: fonte e nível de confiança */
+.src { color: var(--muted); font-size: .8rem; font-weight: 400; }
+.conf { margin-top: 10px; font-size: .82rem; padding: 6px 8px; border-radius: 8px; }
+.conf.ok { color: var(--muted); }
+.conf.warn { background: rgba(212,167,44,.16); }
+.linkbtn { background: none; border: none; padding: 4px 2px; color: var(--accent); text-decoration: underline;
+  font: inherit; cursor: pointer; min-height: 32px; }
+.stale-msg { color: #b26b00; font-size: .85rem; font-weight: 600; }
+@media (prefers-color-scheme: dark) { .stale-msg { color: #e3b341; } }
+
+/* gráfico: escolha 24 h / 48 h */
+.chart-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chart-head h2 { margin: 0; }
+#chartRange { display: flex; gap: 4px; }
+#chartRange button { min-height: 36px; padding: 4px 12px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); font: inherit; font-size: .85rem; cursor: pointer; }
+#chartRange button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (prefers-color-scheme: dark) {
+  #chartRange button[aria-pressed="true"], #srcTabs button.on { color: #0f141a; } /* contraste no modo escuro */
+}
+#dryWindow { margin-top: 8px; }
+
+/* ===================== Esqueletos de carregamento (evitam o layout pular) ===================== */
+.skel, .skel-line, .skel-box, .skel-blocks { background: linear-gradient(90deg, var(--line) 25%, var(--bg) 50%, var(--line) 75%);
+  background-size: 200% 100%; animation: skel 1.4s infinite linear; border-radius: 8px; }
+.card.skel { min-height: 250px; border-color: transparent; }
+.card.skel.skel-sm { min-height: 230px; }
+.skel-line { height: 14px; margin: 10px 0; }
+.skel-line.short { width: 60%; }
+.skel-box { height: 70px; margin-top: 10px; }
+.skel-blocks { height: 64px; margin-top: 10px; border: none; }
+#radarMotion, #radarTime { min-height: 1.4em; }
+.nc { min-height: 150px; }
+@keyframes skel { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .skel, .skel-line, .skel-box, .skel-blocks { animation: none; }
+  #radarLayer { transition: none; }
 }

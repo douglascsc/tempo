@@ -30,13 +30,22 @@ function buildMarkers() {
 }
 
 // ----- Climatempo -----
+// Cada imagem tem ~740 KB. Só baixa os quadros que a animação vai usar
+// (4 no padrão "últimos 15 min"); os outros só se a pessoa escolher "2 h".
+const preloaded = new Set();
 function loadClimatempo() {
-  const stamp = Math.floor(Date.now() / REFRESH_MS); // evita cache velho
+  const stamp = Math.floor(Date.now() / REFRESH_MS); // muda a cada 5 min: evita cache velho
   frames = [];
-  for (let i = 1; i <= RADAR_FRAMES; i++) {
-    const img = new Image();
-    img.src = `${RADAR_URL(i)}?v=${stamp}`;
-    frames[i] = img.src;
+  for (let i = 1; i <= RADAR_FRAMES; i++) frames[i] = `${RADAR_URL(i)}?v=${stamp}`;
+  preloaded.clear();
+  preloadClimatempo();
+}
+function preloadClimatempo() {
+  if (src !== "ct") return; // aba RainViewer aberta: não baixa nada da Climatempo
+  for (let i = 1; i <= nFrames(); i++) {
+    if (preloaded.has(frames[i])) continue;
+    preloaded.add(frames[i]);
+    new Image().src = frames[i];
   }
 }
 
@@ -56,8 +65,7 @@ function initRainViewerMap() {
 
 async function loadRainViewer() {
   initRainViewerMap();
-  const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
-  const d = await res.json();
+  const d = await (await fetchWithTimeout("https://api.rainviewer.com/public/weather-maps.json", 15000)).json();
   rv.layers.forEach(l => rv.map.removeLayer(l));
   const past = d.radar.past;                // mais antiga -> mais recente
   rv.times = past.map(p => new Date(p.time * 1000)).reverse(); // índice 0 = mais recente
@@ -130,10 +138,9 @@ function showFrame(i) {
     rv.layers.forEach((l, k) => l.setOpacity(k === frame - 1 ? 0.75 : 0));
     const when = rv.times[frame - 1];
     const newestAge = Math.round((Date.now() - rv.times[0]) / 60000);
-    const age = Math.round((Date.now() - when) / 60000);
     document.getElementById("frameInfo").textContent = `· ${hhmm(when)}`;
     t.className = newestAge > 25 ? "stale" : "";
-    t.innerHTML = `🕒 Imagem de <b>${hhmm(when)}</b> (há ${age} min)` +
+    t.innerHTML = `🕒 Imagem <b>${atAgo(when)}</b>` +
       (newestAge > 25 ? ` · ⚠️ a imagem mais nova já tem ${newestAge} min` : "");
   }
   const s = document.getElementById("frame");
@@ -151,7 +158,8 @@ function step(dir) { // dir = +1 avança no tempo
 function tick() {
   // pausa no quadro mais recente e no fim da previsão
   const delay = frame === minFrame() ? 2000 : frame === 1 && minFrame() < 1 ? 1000 : frame === 1 ? 2000 : 500;
-  timer = setTimeout(() => { if (playing) { step(1); tick(); } }, delay);
+  // com a aba em segundo plano a animação não avança (economiza bateria)
+  timer = setTimeout(() => { if (playing) { if (!document.hidden) step(1); tick(); } }, delay);
 }
 
 function setPlaying(p) {
@@ -167,6 +175,7 @@ async function setSource(s) {
   document.getElementById("radarBox").hidden = s !== "ct";
   document.getElementById("rvMap").hidden = s !== "rv";
   document.querySelector("label.zoom").hidden = s !== "ct";
+  if (s === "ct") preloadClimatempo();
   if (s === "rv") {
     initRainViewerMap();
     rv.map.invalidateSize();
@@ -185,8 +194,7 @@ async function loadRadar() {
   showFrame(frame);
 }
 
-// No celular o radar abre com zoom máximo em Campo Bom + Sapucaia; ao tocar num cartão, centraliza nela.
-const IS_PHONE = matchMedia("(max-width: 600px)").matches;
+// No celular o radar abre com zoom máximo em Campo Bom + Sapucaia; ao escolher uma cidade, centraliza nela.
 let focusAll = IS_PHONE;
 const FOCUS = CITIES.filter(c => ["cb", "ss"].includes(c.id)); // cidades principais
 const CENTER_ALL = { lat: FOCUS.reduce((s, c) => s + c.lat, 0) / FOCUS.length, lon: FOCUS.reduce((s, c) => s + c.lon, 0) / FOCUS.length };
@@ -222,7 +230,7 @@ document.getElementById("playBtn").onclick = () => setPlaying(!playing);
 document.getElementById("prevBtn").onclick = () => { setPlaying(false); step(-1); };
 document.getElementById("nextBtn").onclick = () => { setPlaying(false); step(1); };
 document.getElementById("frame").oninput = e => { setPlaying(false); showFrame(nFrames() - +e.target.value); };
-document.getElementById("span").onchange = e => { spanMin = +e.target.value; showFrame(nFrames()); };
+document.getElementById("span").onchange = e => { spanMin = +e.target.value; preloadClimatempo(); showFrame(nFrames()); };
 document.getElementById("zoom").oninput = applyZoom;
 document.querySelectorAll("#srcTabs button").forEach(b => b.onclick = () => setSource(b.dataset.src));
 

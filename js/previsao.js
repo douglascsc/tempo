@@ -10,9 +10,7 @@ async function loadForecast() {
     forecast_days: 5,
     timezone: "America/Sao_Paulo",
   });
-  const res = await fetch("https://api.open-meteo.com/v1/forecast?" + params);
-  if (!res.ok) throw new Error("Open-Meteo " + res.status);
-  const data = await res.json();
+  const data = await (await fetchWithTimeout("https://api.open-meteo.com/v1/forecast?" + params, 20000)).json();
   const list = Array.isArray(data) ? data : [data];
   CITIES.forEach((c, i) => forecasts[c.id] = list[i]);
 }
@@ -52,6 +50,25 @@ function summarize(f) {
     sub: `Probabilidade máxima: ${maxProb}%` };
 }
 
+// O modelo prevê chuva na próxima hora? (usado para comparar com o radar)
+function modelWetNextHour(f) {
+  const now = Date.now();
+  const m = f.minutely_15.time.map((t, i) => ({ t: parseT(t), p: f.minutely_15.precipitation[i] ?? 0 }))
+    .filter(x => x.t.getTime() + 15 * 60e3 > now).slice(0, 4);
+  return m.reduce((a, x) => a + x.p, 0) >= 0.3;
+}
+
+// Radar (o que existe agora) x modelo (simulação). Para a próxima hora vale o radar;
+// quando os dois discordam, a página avisa em vez de mostrar duas respostas diferentes.
+function confidence(n, f) {
+  if (!n || n.error) return null;
+  const radarWet = n.firstMin != null, modelWet = modelWetNextHour(f);
+  if (radarWet === modelWet) return { ok: true, txt: "✓ radar e previsão do modelo concordam" };
+  return { ok: false, txt: radarWet
+    ? "⚠️ O radar vê chuva chegando, mas o modelo não previa: confiança média"
+    : "⚠️ O modelo previa chuva, mas o radar não vê chuva por perto: confiança baixa" };
+}
+
 // ===================== Alerta de temporal =====================
 // Olha as próximas 12 h: trovoada (código 95–99), rajadas fortes e instabilidade (CAPE)
 function stormAlert(f) {
@@ -73,7 +90,7 @@ function stormAlert(f) {
   }
   const c = h.reduce((a, b) => (b.cape > a.cape ? b : a));
   if (!thunder && c.cape >= 1500 && c.prob >= 40) {
-    items.push(`⚡ Atmosfera instável à tarde/noite (CAPE ${Math.round(c.cape)})`);
+    items.push(`⚡ Atmosfera instável: risco de temporal por volta das ${hh(c.t)}`);
     level = Math.max(level, 1);
   }
   if (thunder && (c.cape >= 2500 || g.gust >= 80)) level = 2;
@@ -109,24 +126,28 @@ function daysHtml(f) {
 }
 
 // ----- Bloco "próxima hora" vindo do radar -----
+// Escala da Defesa Civil para o radar: azul/verde = fraca, amarelo/laranja = moderada,
+// vermelho/rosa = intensa, roxo a preto = muito intensa (limites em dBZ da legenda do radar)
 const INT = [ // dBZ mínimo -> rótulo e cor
-  [48, "muito forte", "#a040ff"], [39, "forte", "#e5534b"], [28, "moderada", "#f0883e"], [15, "fraca", "#3fb950"],
+  [60, "muito intensa", "#7b2cbf"], [45, "intensa", "#e5534b"], [30, "moderada", "#f0a020"], [15, "fraca", "#3fb950"],
 ];
 const intensity = dbz => INT.find(([m]) => dbz >= m) || [0, "sem chuva", "var(--line)"];
 
 function nowcastHtml(n) {
-  if (!n) return `<div class="nc muted">Radar: calculando tendência…</div>`;
-  if (n.error) return `<div class="nc muted">Radar indisponível no momento.</div>`;
+  if (!n) return `<div class="nc"><div class="skel-line"></div><div class="skel-line short"></div><div class="nc-blocks skel-blocks"></div></div>`;
+  if (n.error) return `<div class="nc muted">Radar indisponível no momento. <button class="linkbtn" onclick="refresh()">Tentar de novo</button></div>`;
   let head;
-  if (n.firstMin === 0) head = `🌧️ <b>Possível chuva agora</b> — ${intensity(n.firstDbz)[1]}`;
+  // a imagem do radar tem alguns minutos: chuva a poucos km pode já estar chegando
+  if (n.firstMin === 0 && n.nearKm != null && n.nearKm >= 2) head = `🌧️ <b>Chuva chegando agora</b> — ${intensity(n.firstDbz)[1]}`;
+  else if (n.firstMin === 0) head = `🌧️ <b>Possível chuva agora</b> — ${intensity(n.firstDbz)[1]}`;
   else if (n.firstMin != null) head = `🌧️ <b>Possível chuva em ~${n.firstMin} min</b> — ${intensity(n.firstDbz)[1]}`;
   else head = `🌤️ <b>Sem chuva se aproximando</b> na próxima hora`;
   const near = n.nearKm == null ? "nenhuma num raio de 120 km"
     : n.nearKm < 2 ? "sobre a cidade" : `<b>${Math.round(n.nearKm)} km</b> ao ${n.nearDir}`;
   return `<div class="nc">
-    <div>${head}</div>
+    <div>${head} <span class="src">· radar</span></div>
     <div class="nc-near">Chuva mais próxima: ${near}</div>
-    <div class="nc-lbl">Próxima hora em min (tendência)${radarMotion ? ` <span class="muted">· radar das ${hhmm(radarMotion.time)}</span>` : ""}:</div>
+    <div class="nc-lbl">Próxima hora em min (tendência)${radarMotion ? ` <span class="muted">· radar às ${hhmm(radarMotion.time)}</span>` : ""}:</div>
     <div class="nc-blocks">${n.blocks.map((v, i) => {
       const [, lbl, col] = intensity(v);
       return `<div><div class="muted nc-t">${i * 15}–${i * 15 + 15}</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
@@ -142,45 +163,83 @@ function renderCards() {
     if (!f) return;
     const s = summarize(f);
     const a = stormAlert(f);
+    const conf = confidence(nowcast[c.id], f);
     const [icon, cond] = wx(f.current.weather_code, f.current.is_day);
     const alertHtml = a && a.level
       ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
       : (a ? `<div class="sub">💨 Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : "");
-    const card = document.createElement("div");
+    const confHtml = conf ? `<div class="conf ${conf.ok ? "ok" : "warn"}">${conf.txt}${conf.ok ? "" : ` ${infoBtn("conf-" + c.id)}
+      <div id="conf-${c.id}" class="muted ${infoCls("conf-" + c.id)}">O radar mostra a chuva que existe agora; o modelo é uma simulação do tempo.
+      Para a próxima hora, confie mais no radar.</div>`}</div>` : "";
+    // cartões: o clique do mouse seleciona a cidade; teclado e leitor de tela usam o seletor de cidades (botões reais)
+    const card = document.createElement("article");
     card.className = "card" + (c.id === selected ? " active" : "");
-    card.setAttribute("role", "button");
-    card.tabIndex = 0;
+    card.dataset.id = c.id;
     card.innerHTML = `
       <div class="wx-head">
-        <div class="wx-icon">${icon}</div>
+        <div class="wx-icon" aria-hidden="true">${icon}</div>
         <div class="wx-name"><div class="wx-cond">${cond}</div>
-          <div class="muted"><span class="dot" style="background:${c.color}"></span>${c.name}</div></div>
+          <h3 class="wx-city"><span class="dot" style="background:${c.color}"></span>${c.name}</h3></div>
         <div class="wx-now"><div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
-          <div class="muted">${deg(f.daily.temperature_2m_max[0])} / ${deg(f.daily.temperature_2m_min[0])}</div></div>
+          <div class="muted">máx ${deg(f.daily.temperature_2m_max[0])} / mín ${deg(f.daily.temperature_2m_min[0])}</div></div>
       </div>
-      ${nowcastHtml(nowcast[c.id])}`;
-    card.onclick = () => selectCity(c.id);
-    card.onkeydown = e => { if (e.key === "Enter") selectCity(c.id); };
+      ${nowcastHtml(nowcast[c.id])}
+      ${confHtml}`;
+    card.onclick = e => { if (!e.target.closest("button")) selectCity(c.id); };
     box.appendChild(card);
-    const dc = document.createElement("div");
+    const dc = document.createElement("article");
     dc.className = "card" + (c.id === selected ? " active" : "");
+    dc.dataset.id = c.id;
     dc.innerHTML = `
-      <div class="city"><span><span class="dot" style="background:${c.color}"></span>${c.name}</span></div>
-      <div class="sub model">📈 Modelo: ${s.text} ${s.sub}</div>
+      <h3 class="city"><span><span class="dot" style="background:${c.color}"></span>${c.name}</span></h3>
+      <div class="sub model">📈 <b>Previsão do modelo (próximas horas):</b> ${s.text} ${s.sub}</div>
       ${alertHtml}
       ${daysHtml(f)}`;
-    dc.onclick = () => selectCity(c.id);
+    dc.onclick = e => { if (!e.target.closest("button")) selectCity(c.id); };
     det.appendChild(dc);
   });
   box.scrollLeft = keep[0]; det.scrollLeft = keep[1];
 }
 
-function selectCity(id) {
+// ----- Seletor de cidade: controla gráfico, radar e (no celular) os dois carrosséis -----
+function renderCitySel() {
+  document.getElementById("citySel").innerHTML = CITIES.map(c =>
+    `<button data-id="${c.id}" aria-pressed="${c.id === selected}"><span class="dot" style="background:${c.color}"></span>${c.short || c.name}</button>`).join("");
+  document.querySelectorAll("#citySel button").forEach(b => b.onclick = () => selectCity(b.dataset.id));
+}
+
+// No celular: leva os carrosséis até o cartão da cidade (exceto o que a pessoa acabou de deslizar)
+function syncCarousels(except, behavior = "smooth") {
+  if (!IS_PHONE) return;
+  const idx = CITIES.findIndex(c => c.id === selected);
+  for (const el of [document.getElementById("cards"), document.getElementById("details")]) {
+    if (el === except || !el.children[idx]) continue;
+    el.scrollTo({ left: el.children[idx].offsetLeft - el.children[0].offsetLeft, behavior });
+  }
+}
+
+// Deslizar um carrossel escolhe a cidade que ficou na tela e alinha o outro carrossel
+function watchCarousel(el) {
+  let t;
+  el.addEventListener("scroll", () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      if (!el.children.length || el.querySelector(".skel")) return;
+      const w = el.children.length > 1 ? el.children[1].offsetLeft - el.children[0].offsetLeft : 1;
+      const idx = Math.max(0, Math.min(el.children.length - 1, Math.round(el.scrollLeft / w)));
+      const id = CITIES[idx]?.id;
+      if (id && id !== selected) selectCity(id, el);
+    }, 150);
+  }, { passive: true });
+}
+
+function selectCity(id, fromCarousel = null) {
   selected = id;
   focusAll = false;
   localStorageSet("cidade", id);
-  renderCards();
-  renderChart();
+  renderCitySel();
+  if (Object.keys(forecasts).length) { renderCards(); renderChart(); }
   applyZoom();
+  syncCarousels(fromCarousel);
 }
 

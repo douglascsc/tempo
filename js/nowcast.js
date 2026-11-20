@@ -23,7 +23,9 @@ async function radarGrid(host, path) {
   for (let tx = x0; tx <= x1; tx++) for (let ty = y0; ty <= y1; ty++) {
     const img = new Image(); img.crossOrigin = "anonymous";
     img.src = `${host}${path}/256/${Z}/${tx}/${ty}/2/0_0.png`;
-    jobs.push(img.decode().then(() => ctx.drawImage(img, (tx - x0) * TILE, (ty - y0) * TILE)).catch(() => {}));
+    // tempo limite por imagem: um tile que não responde não trava o cálculo
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000));
+    jobs.push(Promise.race([img.decode(), timeout]).then(() => ctx.drawImage(img, (tx - x0) * TILE, (ty - y0) * TILE)).catch(() => {}));
   }
   await Promise.all(jobs);
   const px = ctx.getImageData(0, 0, W, H).data, g = new Uint8Array(W * H);
@@ -59,9 +61,9 @@ function estimateShift(A, B, W, H) {
   return { dx: best[0], dy: best[1] };
 }
 
-async function runNowcast() {
+async function runNowcast(attempt = 1) {
   try {
-    const d = await (await fetch("https://api.rainviewer.com/public/weather-maps.json")).json();
+    const d = await (await fetchWithTimeout("https://api.rainviewer.com/public/weather-maps.json", 15000)).json();
     const past = d.radar.past;
     // Compara a imagem mais nova com as de 10, 20 e 30 min antes e combina os três deslocamentos:
     // um par só pode errar bastante a velocidade (ex.: 64 x 90 km/h).
@@ -119,6 +121,8 @@ async function runNowcast() {
     });
   } catch (e) {
     console.error(e);
+    // falha de rede passageira: tenta mais uma vez sozinho antes de mostrar o erro
+    if (attempt < 2) { await new Promise(r => setTimeout(r, 3000)); return runNowcast(attempt + 1); }
     CITIES.forEach(c => nowcast[c.id] = { error: true });
     radarMotion = null;
   }
@@ -131,6 +135,6 @@ function renderRadarMotion() {
   const m = radarMotion;
   const mov = m.from ? ` · chuva vindo do <b>${m.from}</b> a <b>${Math.round(m.speed)} km/h</b>`
     : " · movimento da chuva: parado ou chuva insuficiente para estimar";
-  el.innerHTML = `🧭 Radar RainViewer · imagem das <b>${hhmm(m.time)}</b> (${m.ageMin} min atrás)${mov} ${infoBtn("ncNote")}`;
+  el.innerHTML = `🧭 Radar RainViewer · imagem <b>${atAgo(m.time)}</b>${mov} ${infoBtn("ncNote")}`;
 }
 
