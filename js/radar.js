@@ -3,11 +3,11 @@
 // e RainViewer (mapa com horário exato de cada imagem, 1 a cada 10 min).
 // Em ambas, o quadro 1 é o mais recente.
 let src = "ct"; // sempre abre na Climatempo (mais detalhada); o RainViewer fica na aba ao lado
-// período da animação: "15" (últimos 15 min), "120" (últimas 2 h), "next" (próximas 2 h), "all" (últimas 2 h + próximas 2 h)
+// período da animação: "15" (últimos 20 min), "120" (últimas 2 h), "next" (próximas 2 h), "all" (últimas 2 h + próximas 2 h)
 // "next" e "all" só existem no RainViewer, que tem a previsão desenhada
 let mode = "15";
 const MODES = {
-  ct: [["15", "Últimos 15 min"], ["120", "Últimas 2 h"]],
+  ct: [["15", "Últimos 20 min"], ["120", "Últimas 2 h"]],
   rv: [["next", "Próximas 2 h"], ["all", "Últimas 2 h + próximas 2 h"], ["120", "Últimas 2 h"]],
 };
 let frame = 1;
@@ -37,7 +37,7 @@ function buildMarkers() {
 
 // ----- Climatempo -----
 // Cada imagem tem ~740 KB. Só baixa os quadros que a animação vai usar
-// (4 no padrão "últimos 15 min"); os outros só se a pessoa escolher "2 h".
+// (4 no padrão "últimos 20 min"); os outros só se a pessoa escolher "2 h".
 const preloaded = new Set();
 function loadClimatempo() {
   const stamp = Math.floor(Date.now() / REFRESH_MS); // muda a cada 5 min: evita cache velho
@@ -162,7 +162,7 @@ function step(dir) { // dir = +1 avança no tempo
 
 function tick() {
   // velocidade conforme a quantidade de quadros: poucos quadros andam mais devagar
-  // Climatempo 15 min (4 quadros): 1 s cada · 2 h (24 quadros): 0,4 s · RainViewer: 0,8 s
+  // Climatempo 20 min (4 quadros): 1 s cada · 2 h (24 quadros): 0,4 s · RainViewer: 0,8 s
   const per = src === "rv" ? (frame <= 0 ? 600 : 800) : nFrames() <= 4 ? 1000 : 400;
   const hold = 2500; // pausa no último quadro (mais recente, ou fim da previsão)
   const delay = frame === minFrame() ? hold : frame === 1 && minFrame() < 1 ? 1200 : per;
@@ -266,7 +266,7 @@ document.getElementById("span").onchange = e => { mode = e.target.value; preload
 // opções do período conforme a fonte do radar
 function fillModes() {
   const sel = document.getElementById("span"), opts = MODES[src];
-  if (!opts.some(([v]) => v === mode)) mode = opts[0][0]; // padrão: Climatempo 15 min, RainViewer próximas 2 h
+  if (!opts.some(([v]) => v === mode)) mode = opts[0][0]; // padrão: Climatempo 20 min, RainViewer próximas 2 h
   sel.innerHTML = opts.map(([v, t]) => `<option value="${v}"${v === mode ? " selected" : ""}>${t}</option>`).join("");
 }
 document.getElementById("zoom").oninput = applyZoom;
