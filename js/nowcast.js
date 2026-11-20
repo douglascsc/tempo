@@ -253,7 +253,7 @@ function openMini() {
   dlg.querySelector(".mini-dot").style.background = c.color;
   dlg.querySelector(".ct-time").style.backgroundImage = `url('${frames[1]}')`;
   dlg.showModal();
-  ctCrop(dlg.querySelector(".ct-big"), c, 360); // ~110 km
+  ctCrop(dlg.querySelector(".ct-big"), c, 670); // ~200 km
 }
 
 function renderRadarMotion() {
