@@ -118,13 +118,12 @@ function showFrame(i) {
   const t = document.getElementById("radarTime");
   if (src === "ct") {
     if (frames[frame]) document.getElementById("radarImg").src = frames[frame];
-    const ago = frame === 1 ? "imagem mais recente" : `${(frame - 1) * 5} min antes da mais recente`;
-    document.getElementById("frameInfo").textContent = `· ${ago}`;
+    // a Climatempo não deixa o navegador ler os pixels, então o horário exato é mostrado
+    // recortado da própria imagem (canto da legenda), ao lado do título, trocando a cada quadro
+    document.getElementById("frameInfo").innerHTML = frames[frame]
+      ? `<span class="ct-time" style="background-image:url('${frames[frame]}')" role="img" aria-label="Horário da imagem do radar"></span>` : "";
     t.className = "";
-    // no celular o zoom esconde o canto da imagem: mostra o horário recortado da própria imagem
-    t.innerHTML = IS_PHONE && frames[frame]
-      ? `${uIcon("clock")} Horário da imagem: <span class="ct-time" style="background-image:url('${frames[frame]}')"></span> ${infoBtn("ctNote")}<div id="ctNote" class="muted ${infoCls("ctNote")}">Pode ter até ~1 h de atraso; para o horário exato, use o RainViewer.</div>`
-      : `${uIcon("clock")} O horário está no canto inferior direito da imagem. Este radar pode chegar com <b>até ~1 h de atraso</b>; para o horário exato, use o RainViewer.`;
+    t.innerHTML = `${uIcon("clock")} Horário da imagem ao lado do título. ${infoBtn("ctNote")}<span id="ctNote" class="muted ${infoCls("ctNote")}"> Este radar pode chegar com até ~1 h de atraso; para o horário exato, use o RainViewer.</span>`;
   } else if (rv.layers.length && frame <= 0) {
     rv.layers.forEach(l => l.setOpacity(0));
     rv.future.forEach((l, k) => l.setOpacity(k === -frame ? 0.75 : 0));
