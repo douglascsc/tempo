@@ -256,6 +256,8 @@ function openMini() {
 
 function renderRadarMotion() {
   const el = document.getElementById("radarMotion");
+  // esta linha é do RainViewer: só aparece na aba RainViewer (na Climatempo confundia)
+  el.hidden = src !== "rv";
   if (!radarMotion) { el.textContent = ""; return; }
   const m = radarMotion;
   const mov = m.from ? ` · chuva vindo do <b>${m.from}</b> a <b>${Math.round(m.speed)} km/h</b>`

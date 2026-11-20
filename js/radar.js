@@ -183,6 +183,7 @@ async function setSource(s) {
   document.getElementById("rvMap").hidden = s !== "rv";
   document.querySelector("label.zoom").hidden = s !== "ct";
   fillModes();
+  renderRadarMotion();
   if (s === "ct") preloadClimatempo();
   if (s === "rv") {
     initRainViewerMap();
