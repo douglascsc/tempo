@@ -10,17 +10,17 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6feb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z' fill='%231f6feb'/><path d='M12 12v7a2 2 0 0 1-4 0'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=34">
+<link rel="stylesheet" href="css/style.css?v=35">
 </head>
 <body>
 <main>
+  <!-- Seletor de cidade: controla gráfico, radar e cartões -->
+  <nav id="citySel" aria-label="Escolher cidade"></nav>
+
   <header>
     <h1><span id="h1Icon"></span>Vai chover? <button class="help-btn" onclick="document.getElementById('helpDlg').showModal()" aria-label="Como ler este painel" title="Como ler este painel">i</button></h1>
     <span class="muted" id="updated">Carregando…</span>
   </header>
-
-  <!-- Seletor de cidade: controla gráfico, radar e cartões -->
-  <nav id="citySel" aria-label="Escolher cidade"></nav>
 
   <!-- 1. Resposta direta: tempo agora + próxima hora -->
   <section id="cards" class="cardgrid" aria-label="Tempo agora e próxima hora">
@@ -137,13 +137,13 @@
   <div class="src-line">Fonte: radar de Porto Alegre, imagem da Climatempo · a seta mostra de onde a chuva vem (movimento calculado com o RainViewer) · área de ~200 km</div>
 </dialog>
 
-<script src="js/config.js?v=34"></script>
-<script src="js/icones.js?v=34"></script>
-<script src="js/previsao.js?v=34"></script>
-<script src="js/grafico.js?v=34"></script>
-<script src="js/radar.js?v=34"></script>
-<script src="js/nowcast.js?v=34"></script>
-<script src="js/rio.js?v=34"></script>
-<script src="js/main.js?v=34"></script>
+<script src="js/config.js?v=35"></script>
+<script src="js/icones.js?v=35"></script>
+<script src="js/previsao.js?v=35"></script>
+<script src="js/grafico.js?v=35"></script>
+<script src="js/radar.js?v=35"></script>
+<script src="js/nowcast.js?v=35"></script>
+<script src="js/rio.js?v=35"></script>
+<script src="js/main.js?v=35"></script>
 </body>
 </html>
