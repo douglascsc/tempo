@@ -1,6 +1,7 @@
 // ===================== Configuração =====================
 const CITIES = [
-  { id: "cb", slug: "campo-bom", name: "Campo Bom",       short: "Campo Bom", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
+  { id: "cb", slug: "campo-bom", name: "Campo Bom",       short: "Campo Bom", lbl: "left", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
+  { id: "sp", slug: "sapiranga", name: "Sapiranga",       short: "Sapiranga", lbl: "top", lat: -29.6383, lon: -51.0069, color: "#577590" },
   { id: "ss", slug: "sapucaia", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
   { id: "nt", slug: "nova-tramandai", alias: "tramandai", name: "Nova Tramandaí", short: "Nova Tramandaí", lat: -30.0370, lon: -50.1611, color: "#00e5ff" },
   { id: "poa", slug: "porto-alegre", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },

@@ -31,7 +31,7 @@ function buildMarkers() {
   document.getElementById("markers").innerHTML = CITIES.map(c => {
     const p = cityPos(c);
     return `<div class="marker" style="left:${p.x}%;top:${p.y}%">
-      <div class="pin" style="background:${c.color}"></div>${c.id === "poa" ? "" : `<div class="lbl">${c.name}</div>`}</div>`; // a imagem já escreve "Porto Alegre"
+      <div class="pin" style="background:${c.color}"></div>${c.id === "poa" ? "" : `<div class="lbl ${c.lbl || ""}">${c.name}</div>`}</div>`; // a imagem já escreve "Porto Alegre"
   }).join("");
 }
 
@@ -66,7 +66,7 @@ function initRainViewerMap() {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Radar <a href="https://www.rainviewer.com/">RainViewer</a>',
   }).addTo(rv.map);
   CITIES.forEach(c => L.circleMarker([c.lat, c.lon], { radius: 7, color: "#fff", weight: 2, fillColor: c.color, fillOpacity: 1 })
-    .bindTooltip(c.name, { permanent: true, direction: "right", className: "city-tip" }).addTo(rv.map));
+    .bindTooltip(c.name, { permanent: true, direction: c.lbl || "right", className: "city-tip" }).addTo(rv.map));
 }
 
 async function loadRainViewer() {

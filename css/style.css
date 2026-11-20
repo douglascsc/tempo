@@ -69,6 +69,7 @@ section { margin-bottom: 20px; }
 .marker .pin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #000; }
 .marker .lbl { position: absolute; left: 10px; top: -8px; white-space: nowrap; font-size: 12px; font-weight: 600;
   color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+.marker .lbl.top { top: -24px; left: -4px; } .marker .lbl.left { left: auto; right: 10px; }
 #radarControls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
 .river-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 8px; }
 .river-grid .big { font-size: 1.35rem; font-weight: 600; }
@@ -291,8 +292,8 @@ h3.wx-city { font-weight: 400; color: var(--muted); }
 }
 
 /* 8 cidades: no computador o seletor quebra em mais de uma linha se precisar */
-@media (min-width: 601px) { #citySel { display: grid; grid-template-columns: repeat(4, 1fr); } }
-@media (min-width: 1060px) { #citySel { grid-template-columns: repeat(8, 1fr); } #citySel a { padding: 6px 4px; font-size: .88rem; } }
+@media (min-width: 601px) { #citySel { display: grid; grid-template-columns: repeat(5, 1fr); } }
+@media (min-width: 1060px) { #citySel { grid-template-columns: repeat(9, 1fr); } #citySel a { padding: 6px 4px; font-size: .88rem; } }
 #citySel a { display: flex; align-items: center; justify-content: center; text-decoration: none; }
 
 /* ===================== Cartão de cima: mini-radar + máx/mín, detalhes do radar ===================== */
