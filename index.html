@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vai chover?</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --text: #1b2430; --muted: #607080;
+    --line: #dde3ea; --accent: #1f6feb; --rain: #2f81f7; --temp: #e5534b;
+    --prob: #8b949e; --dry: #2da44e; --dry-bg: rgba(45,164,78,.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f141a; --card: #18202a; --text: #e6edf3; --muted: #8b98a5;
+      --line: #2a3542; --accent: #58a6ff; --rain: #58a6ff; --temp: #ff7b72;
+      --prob: #6e7681; --dry: #3fb950; --dry-bg: rgba(63,185,80,.14);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1000px; margin: 0 auto; padding: 16px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  h1 { font-size: 1.4rem; margin: 4px 0 12px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  .muted { color: var(--muted); font-size: .85rem; }
+  section { margin-bottom: 20px; }
+
+  /* 1. Cards */
+  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 14px;
+    cursor: pointer; text-align: left; color: inherit; font: inherit; }
+  .card.active { border-color: var(--accent); }
+  .card .city { font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .card .temp { font-size: 1.6rem; font-weight: 600; }
+  .card .answer { margin: 8px 0 4px; font-size: 1.02rem; line-height: 1.35; }
+  .card .sub { color: var(--muted); font-size: .85rem; }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .badge { font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--line); }
+  .badge.wet { background: var(--rain); color: #fff; }
+  .badge.dry { background: var(--dry); color: #fff; }
+
+  /* 2. Radar */
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  #radarBox { position: relative; overflow: hidden; border-radius: 8px; background: #000; touch-action: pan-y; }
+  #radarLayer { position: relative; transform-origin: 50% 50%; transition: transform .25s ease; }
+  #radarImg { display: block; width: 100%; height: auto; }
+  .marker { position: absolute; transform: translate(-50%, -50%); pointer-events: none; }
+  .marker .pin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #000; }
+  .marker .lbl { position: absolute; left: 10px; top: -8px; white-space: nowrap; font-size: 12px; font-weight: 600;
+    color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  #radarControls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+  #radarControls button { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); font-size: 1rem; cursor: pointer; }
+  #frame { flex: 1 1 200px; }
+  label.zoom { display: flex; align-items: center; gap: 6px; font-size: .9rem; }
+
+  /* 3. Gráfico */
+  #chartWrap { width: 100%; overflow-x: auto; }
+  #chart { display: block; width: 100%; min-width: 600px; height: 280px; }
+  #chart text { fill: var(--muted); font-size: 11px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; margin-top: 6px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 14px; height: 4px; margin-right: 5px; vertical-align: middle; }
+  .lg-rain::before { background: var(--rain); height: 10px !important; }
+  .lg-temp::before { background: var(--temp); }
+  .lg-prob::before { border-top: 2px dashed var(--prob); height: 0 !important; }
+  .lg-dry::before { background: var(--dry-bg); border: 1px solid var(--dry); height: 10px !important; }
+  #dryWindow { margin: 4px 0 10px; font-size: .95rem; }
+  #dryWindow b { color: var(--dry); }
+  footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 10px 0 24px; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>☔ Vai chover?</h1>
+    <span class="muted" id="updated">Carregando…</span>
+  </header>
+
+  <!-- 1. Resposta direta -->
+  <section id="cards"></section>
+
+  <!-- 2. Radar -->
+  <section class="panel">
+    <h2>Radar de Porto Alegre <span class="muted" id="frameInfo"></span></h2>
+    <div id="radarBox">
+      <div id="radarLayer">
+        <img id="radarImg" alt="Radar meteorológico de Porto Alegre">
+        <div id="markers"></div>
+      </div>
+    </div>
+    <div id="radarControls">
+      <button id="playBtn" title="Play/Pause">⏸️</button>
+      <button id="prevBtn" title="Anterior">⏮️</button>
+      <button id="nextBtn" title="Próxima">⏭️</button>
+      <input type="range" id="frame" min="0" max="23" value="23">
+      <label class="zoom">🔍 <input type="range" id="zoom" min="1" max="4" step="0.1" value="1"></label>
+    </div>
+  </section>
+
+  <!-- 3. Gráfico -->
+  <section class="panel">
+    <h2 id="chartTitle">Próximas 48 h</h2>
+    <div id="dryWindow"></div>
+    <div id="chartWrap"><svg id="chart" viewBox="0 0 900 280" preserveAspectRatio="none"></svg></div>
+    <div class="legend">
+      <span class="lg-rain">Chuva (mm/h)</span>
+      <span class="lg-temp">Temperatura (°C)</span>
+      <span class="lg-prob">Probabilidade de chuva (%)</span>
+      <span class="lg-dry">Melhor janela seca</span>
+    </div>
+  </section>
+
+  <footer>
+    Previsão: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+    Radar: Climatempo (uso pessoal) · Atualiza sozinho a cada 10 min
+  </footer>
+</main>
+
+<script>
+// ===================== Configuração =====================
+const CITIES = [
+  { id: "cb", name: "Campo Bom",       lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
+  { id: "ss", name: "Sapucaia do Sul", lat: -29.8276, lon: -51.1450, color: "#e040fb" },
+  { id: "nt", name: "Nova Tramandaí",  lat: -29.9925, lon: -50.1380, color: "#00e5ff" },
+];
+
+// Área coberta pela imagem do radar (projeção lat/lon simples)
+const RADAR_BOUNDS = { west: -54.30, east: -48.10, north: -28.21, south: -31.97 };
+const RADAR_URL = i => `https://statics.climatempo.com.br/radar_poa/pngs/latest/radar_poa_${i}.png`;
+const RADAR_FRAMES = 24;           // 1 = mais recente, 24 = mais antiga
+const REFRESH_MS = 10 * 60 * 1000; // 10 minutos
+
+const RAIN_MIN = 0.1;  // mm em 15 min para considerar "chuva"
+let forecasts = {};    // id -> dados da Open-Meteo
+let selected = localStorageGet("cidade") || "cb";
+
+function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+const hhmm = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+const hh = d => d.getHours() + "h";
+const fmtMm = v => v < 1 ? v.toFixed(1).replace(".", ",") : Math.round(v).toString();
+// Open-Meteo devolve horário local sem fuso; a página assume que quem abre está no mesmo fuso (Brasília)
+const parseT = s => new Date(s);
+
+// ===================== 1. Previsão =====================
+async function loadForecast() {
+  const params = new URLSearchParams({
+    latitude: CITIES.map(c => c.lat).join(","),
+    longitude: CITIES.map(c => c.lon).join(","),
+    current: "temperature_2m,precipitation,weather_code",
+    minutely_15: "precipitation",
+    hourly: "temperature_2m,precipitation,precipitation_probability",
+    forecast_days: 3,
+    timezone: "America/Sao_Paulo",
+  });
+  const res = await fetch("https://api.open-meteo.com/v1/forecast?" + params);
+  if (!res.ok) throw new Error("Open-Meteo " + res.status);
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : [data];
+  CITIES.forEach((c, i) => forecasts[c.id] = list[i]);
+}
+
+// Frase direta: está chovendo? quando começa/para?
+function summarize(f) {
+  const now = Date.now();
+  const m = f.minutely_15.time.map((t, i) => ({ t: parseT(t), p: f.minutely_15.precipitation[i] ?? 0 }))
+    .filter(x => x.t.getTime() + 15 * 60e3 > now);
+  const h = f.hourly.time.map((t, i) => ({
+    t: parseT(t), p: f.hourly.precipitation[i] ?? 0, prob: f.hourly.precipitation_probability[i] ?? 0,
+  })).filter(x => x.t.getTime() + 3600e3 > now);
+
+  const next1h = m.slice(0, 4).reduce((s, x) => s + x.p, 0);
+  const rainingNow = (m[0] && m[0].p >= RAIN_MIN) || (f.current.precipitation ?? 0) >= RAIN_MIN;
+
+  if (rainingNow) {
+    const stop = m.findIndex(x => x.p < RAIN_MIN);
+    const until = stop > 0 && stop < 12 ? `, deve parar por volta das ${hhmm(m[stop].t)}` : "";
+    return { wet: true, badge: "Chovendo", text: `Chovendo agora${until}.`,
+      sub: `~${fmtMm(next1h)} mm na próxima hora` };
+  }
+  const start = m.slice(0, 12).find(x => x.p >= RAIN_MIN); // próximas 3 h
+  if (start) {
+    const i = m.indexOf(start);
+    const mm = m.slice(i, i + 4).reduce((s, x) => s + x.p, 0);
+    return { wet: true, badge: "Chuva em breve", text: `Chuva prevista a partir das ${hhmm(start.t)}.`,
+      sub: `~${fmtMm(mm)} mm na primeira hora` };
+  }
+  const later = h.slice(0, 12).find(x => x.p >= 0.2 || x.prob >= 60);
+  if (later) {
+    return { wet: false, badge: "Seco por ora", text: `Sem chuva nas próximas 3 h.`,
+      sub: `Possível chuva a partir das ${hh(later.t)} (${later.prob}%)` };
+  }
+  const maxProb = Math.max(0, ...h.slice(0, 12).map(x => x.prob));
+  return { wet: false, badge: "Seco", text: "Sem chuva prevista nas próximas 12 h.",
+    sub: `Probabilidade máxima: ${maxProb}%` };
+}
+
+function renderCards() {
+  const box = document.getElementById("cards");
+  box.innerHTML = "";
+  CITIES.forEach(c => {
+    const f = forecasts[c.id];
+    const s = summarize(f);
+    const btn = document.createElement("button");
+    btn.className = "card" + (c.id === selected ? " active" : "");
+    btn.innerHTML = `
+      <div class="city"><span><span class="dot" style="background:${c.color}"></span>${c.name}</span>
+        <span class="badge ${s.wet ? "wet" : "dry"}">${s.badge}</span></div>
+      <div class="temp">${Math.round(f.current.temperature_2m)}°C</div>
+      <div class="answer">${s.text}</div>
+      <div class="sub">${s.sub}</div>`;
+    btn.onclick = () => selectCity(c.id);
+    box.appendChild(btn);
+  });
+}
+
+function selectCity(id) {
+  selected = id;
+  localStorageSet("cidade", id);
+  renderCards();
+  renderChart();
+  applyZoom();
+}
+
+// ===================== 2. Radar =====================
+let frame = RADAR_FRAMES; // índice da imagem (24 = mais antiga)
+let playing = true, timer = null, frames = [];
+
+function cityPos(c) {
+  const b = RADAR_BOUNDS;
+  return { x: (c.lon - b.west) / (b.east - b.west) * 100, y: (b.north - c.lat) / (b.north - b.south) * 100 };
+}
+
+function buildMarkers() {
+  document.getElementById("markers").innerHTML = CITIES.map(c => {
+    const p = cityPos(c);
+    return `<div class="marker" style="left:${p.x}%;top:${p.y}%">
+      <div class="pin" style="background:${c.color}"></div><div class="lbl">${c.name}</div></div>`;
+  }).join("");
+}
+
+function loadRadar() {
+  const stamp = Math.floor(Date.now() / REFRESH_MS); // muda a cada 10 min, evita cache velho
+  frames = [];
+  for (let i = 1; i <= RADAR_FRAMES; i++) {
+    const img = new Image();
+    img.src = `${RADAR_URL(i)}?v=${stamp}`;
+    frames[i] = img.src;
+  }
+  showFrame(frame);
+}
+
+function showFrame(i) {
+  frame = i;
+  document.getElementById("radarImg").src = frames[i];
+  document.getElementById("frame").value = RADAR_FRAMES - i; // slider: esquerda = antiga
+  const ago = i === 1 ? "mais recente" : `${i - 1} quadros atrás`;
+  document.getElementById("frameInfo").textContent = `· ${RADAR_FRAMES - i + 1}/${RADAR_FRAMES} (${ago})`;
+}
+
+function step(dir) { // dir = +1 avança no tempo
+  let i = frame - dir;
+  if (i < 1) i = RADAR_FRAMES; if (i > RADAR_FRAMES) i = 1;
+  showFrame(i);
+}
+
+function tick() {
+  // pausa 2 s no quadro mais recente antes de recomeçar
+  const delay = frame === 1 ? 2000 : 400;
+  timer = setTimeout(() => { if (playing) { step(1); tick(); } }, delay);
+}
+
+function setPlaying(p) {
+  playing = p; clearTimeout(timer);
+  document.getElementById("playBtn").textContent = p ? "⏸️" : "▶️";
+  if (p) tick();
+}
+
+function applyZoom() {
+  const z = parseFloat(document.getElementById("zoom").value);
+  const p = cityPos(CITIES.find(c => c.id === selected));
+  const layer = document.getElementById("radarLayer");
+  layer.style.transformOrigin = `${p.x}% ${p.y}%`;
+  layer.style.transform = `scale(${z})`;
+  // marcadores mantêm o tamanho na tela
+  document.querySelectorAll(".marker").forEach(m => m.style.transform = `translate(-50%,-50%) scale(${1 / z})`);
+}
+
+document.getElementById("playBtn").onclick = () => setPlaying(!playing);
+document.getElementById("prevBtn").onclick = () => { setPlaying(false); step(-1); };
+document.getElementById("nextBtn").onclick = () => { setPlaying(false); step(1); };
+document.getElementById("frame").oninput = e => { setPlaying(false); showFrame(RADAR_FRAMES - +e.target.value); };
+document.getElementById("zoom").oninput = applyZoom;
+
+// ===================== 3. Gráfico =====================
+// Maior sequência de horas secas (chuva < 0,1 mm e prob < 30%) entre 6h e 22h nas próximas 24 h
+function bestDryWindow(h) {
+  let best = null, cur = null;
+  h.slice(0, 24).forEach((x, i) => {
+    const hour = x.t.getHours();
+    const ok = x.p < 0.1 && x.prob < 30 && hour >= 6 && hour < 22;
+    if (ok) { cur = cur ? { ...cur, end: i } : { start: i, end: i }; if (!best || cur.end - cur.start > best.end - best.start) best = { ...cur }; }
+    else cur = null;
+  });
+  return best;
+}
+
+function renderChart() {
+  const c = CITIES.find(x => x.id === selected);
+  const f = forecasts[c.id];
+  const now = Date.now();
+  const h = f.hourly.time.map((t, i) => ({
+    t: parseT(t), p: f.hourly.precipitation[i] ?? 0, prob: f.hourly.precipitation_probability[i] ?? 0,
+    temp: f.hourly.temperature_2m[i],
+  })).filter(x => x.t.getTime() + 3600e3 > now).slice(0, 48);
+
+  document.getElementById("chartTitle").innerHTML =
+    `<span class="dot" style="background:${c.color}"></span>${c.name} · próximas 48 h`;
+
+  const dry = bestDryWindow(h);
+  const dw = document.getElementById("dryWindow");
+  if (dry) {
+    const end = new Date(h[dry.end].t.getTime() + 3600e3);
+    const dia = h[dry.start].t.getDate() === new Date().getDate() ? "hoje" : "amanhã";
+    dw.innerHTML = `☀️ Melhor janela seca: <b>${dia}, ${hh(h[dry.start].t)}–${hh(end)}</b> (${dry.end - dry.start + 1} h)`;
+  } else {
+    dw.innerHTML = "🌧️ Nenhuma janela seca (6h–22h) nas próximas 24 h.";
+  }
+
+  const W = 900, H = 280, L = 34, R = 34, T = 14, B = 30;
+  const pw = W - L - R, ph = H - T - B, n = h.length, bw = pw / n;
+  const maxP = Math.max(2, ...h.map(x => x.p));
+  const tMin = Math.floor(Math.min(...h.map(x => x.temp)) - 1), tMax = Math.ceil(Math.max(...h.map(x => x.temp)) + 1);
+  const X = i => L + i * bw + bw / 2;
+  const yP = v => T + ph - v / maxP * ph;
+  const yT = v => T + ph - (v - tMin) / (tMax - tMin) * ph;
+  const yPr = v => T + ph - v / 100 * ph;
+  const css = getComputedStyle(document.documentElement);
+  const col = k => css.getPropertyValue(k).trim();
+
+  let s = "";
+  if (dry) s += `<rect x="${L + dry.start * bw}" y="${T}" width="${(dry.end - dry.start + 1) * bw}" height="${ph}" fill="${col("--dry-bg")}" stroke="${col("--dry")}" stroke-dasharray="3 3"/>`;
+  // linhas de grade e rótulos de hora
+  h.forEach((x, i) => {
+    if (x.t.getHours() % 6 === 0) {
+      s += `<line x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${T + ph}" stroke="${col("--line")}"/>`;
+      const label = x.t.getHours() === 0 ? x.t.toLocaleDateString("pt-BR", { weekday: "short" }) : hh(x.t);
+      s += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle">${label}</text>`;
+    }
+  });
+  // barras de chuva
+  h.forEach((x, i) => { if (x.p > 0) s += `<rect x="${L + i * bw + 1}" y="${yP(x.p)}" width="${bw - 2}" height="${T + ph - yP(x.p)}" fill="${col("--rain")}" rx="1"><title>${hh(x.t)}: ${fmtMm(x.p)} mm</title></rect>`; });
+  // probabilidade (tracejada) e temperatura
+  s += `<polyline fill="none" stroke="${col("--prob")}" stroke-width="1.5" stroke-dasharray="4 3" points="${h.map((x, i) => `${X(i)},${yPr(x.prob)}`).join(" ")}"/>`;
+  s += `<polyline fill="none" stroke="${col("--temp")}" stroke-width="2.5" points="${h.map((x, i) => `${X(i)},${yT(x.temp)}`).join(" ")}"/>`;
+  // eixos: mm à esquerda, °C à direita
+  [0, 0.5, 1].forEach(f => {
+    s += `<text x="${L - 6}" y="${yP(maxP * f) + 4}" text-anchor="end">${fmtMm(maxP * f)}</text>`;
+    s += `<text x="${W - R + 6}" y="${yT(tMin + (tMax - tMin) * f) + 4}">${Math.round(tMin + (tMax - tMin) * f)}°</text>`;
+  });
+  s += `<line x1="${L}" x2="${W - R}" y1="${T + ph}" y2="${T + ph}" stroke="${col("--line")}"/>`;
+  document.getElementById("chart").innerHTML = s;
+}
+
+// ===================== Inicialização =====================
+async function refresh() {
+  loadRadar();
+  try {
+    await loadForecast();
+    renderCards();
+    renderChart();
+    document.getElementById("updated").textContent = "Atualizado às " + hhmm(new Date());
+  } catch (e) {
+    document.getElementById("updated").textContent = "Erro ao buscar previsão: " + e.message;
+  }
+}
+
+if (!CITIES.some(c => c.id === selected)) selected = CITIES[0].id;
+buildMarkers();
+applyZoom();
+refresh();
+setPlaying(true);
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>
