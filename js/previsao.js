@@ -126,10 +126,10 @@ function nowcastHtml(n) {
   return `<div class="nc">
     <div>${head}</div>
     <div class="nc-near">Chuva mais próxima: ${near}</div>
-    <div class="nc-lbl">Próxima hora (tendência)${radarMotion ? ` <span class="muted">· radar das ${hhmm(radarMotion.time)}</span>` : ""}:</div>
+    <div class="nc-lbl">Próxima hora em min (tendência)${radarMotion ? ` <span class="muted">· radar das ${hhmm(radarMotion.time)}</span>` : ""}:</div>
     <div class="nc-blocks">${n.blocks.map((v, i) => {
       const [, lbl, col] = intensity(v);
-      return `<div><div class="muted">${i * 15}–${i * 15 + 15} min</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
+      return `<div><div class="muted nc-t">${i * 15}–${i * 15 + 15}</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
     }).join("")}</div></div>`;
 }
 

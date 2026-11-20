@@ -157,3 +157,4 @@ footer a { color: inherit; }
   border: 1px solid var(--line); }
 .rdet > summary { cursor: pointer; }
 .rdet:not([open]) > summary::after { content: " · toque para abrir"; color: var(--muted); font-weight: 400; font-size: .8rem; }
+.nc-t { white-space: nowrap; }
