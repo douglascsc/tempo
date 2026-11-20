@@ -161,7 +161,6 @@ function renderCards() {
   CITIES.forEach(c => {
     const f = forecasts[c.id];
     if (!f) return;
-    const s = summarize(f);
     const a = stormAlert(f);
     const conf = confidence(nowcast[c.id], f);
     const [icon, cond] = wx(f.current.weather_code, f.current.is_day);
@@ -192,7 +191,6 @@ function renderCards() {
     dc.dataset.id = c.id;
     dc.innerHTML = `
       <h3 class="city"><span><span class="dot" style="background:${c.color}"></span>${c.name}</span></h3>
-      <div class="sub model">📈 <b>Previsão do modelo (próximas horas):</b> ${s.text} ${s.sub}</div>
       ${alertHtml}
       ${daysHtml(f)}`;
     dc.onclick = e => { if (!e.target.closest("button")) selectCity(c.id); };
