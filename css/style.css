@@ -140,6 +140,10 @@ footer a { color: inherit; }
   #cards.cardgrid::-webkit-scrollbar, #details.cardgrid::-webkit-scrollbar { display: none; }
   #cards.cardgrid > .card, #details.cardgrid > .card { flex: 0 0 86%; scroll-snap-align: start; }
   .swipe-hint { display: block; }
+  /* abas do radar lado a lado */
+  #srcTabs { flex-wrap: nowrap; }
+  #srcTabs button { flex: 1; white-space: nowrap; }
+  #srcTabs .opt { display: none; }
   #chart { min-width: 560px; height: 240px; }
 }
 .swipe-hint { display: none; text-align: center; font-size: .78rem; color: var(--muted); margin: -12px 0 14px; }
