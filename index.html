@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vai chover?</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root {
     --bg: #f4f6f8; --card: #ffffff; --text: #1b2430; --muted: #607080;
@@ -18,6 +20,7 @@
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: var(--bg); color: var(--text);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   main { max-width: 1000px; margin: 0 auto; padding: 16px; }
@@ -36,6 +39,10 @@
   .card .temp { font-size: 1.6rem; font-weight: 600; }
   .card .answer { margin: 8px 0 4px; font-size: 1.02rem; line-height: 1.35; }
   .card .sub { color: var(--muted); font-size: .85rem; }
+  .alert { margin-top: 8px; padding: 8px 10px; border-radius: 8px; font-size: .88rem; line-height: 1.4; }
+  .alert.lv1 { background: rgba(212,167,44,.18); border-left: 4px solid #d4a72c; }
+  .alert.lv2 { background: rgba(229,83,75,.18); border-left: 4px solid #e5534b; }
+  .card .sub + .sub { margin-top: 4px; }
   .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
   .badge { font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--line); }
   .badge.wet { background: var(--rain); color: #fff; }
@@ -51,6 +58,20 @@
   .marker .lbl { position: absolute; left: 10px; top: -8px; white-space: nowrap; font-size: 12px; font-weight: 600;
     color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   #radarControls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+  .river-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .river-grid .big { font-size: 1.35rem; font-weight: 600; }
+  .spark { width: 100%; height: 70px; display: block; margin: 4px 0; }
+  .spark polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  #river a, footer a { color: inherit; }
+  #srcTabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  #srcTabs button { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); cursor: pointer; font-size: .88rem; }
+  #srcTabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #radarTime { font-size: .9rem; margin-bottom: 8px; }
+  #radarTime.stale { color: #d4a72c; font-weight: 600; }
+  #rvMap { height: 460px; border-radius: 8px; }
+  @media (max-width: 600px) { #rvMap { height: 360px; } }
+  .city-tip { font-weight: 600; }
   #radarControls select { padding: 8px; border-radius: 8px; border: 1px solid var(--line);
     background: var(--bg); color: var(--text); font-size: .95rem; }
   #radarControls button { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line);
@@ -84,9 +105,18 @@
   <!-- 1. Resposta direta -->
   <section id="cards"></section>
 
+  <!-- Rio dos Sinos -->
+  <section class="panel" id="river"><h2>🌊 Rio dos Sinos em Campo Bom</h2><div class="muted">Carregando…</div></section>
+
   <!-- 2. Radar -->
   <section class="panel">
-    <h2>Radar de Porto Alegre <span class="muted" id="frameInfo"></span></h2>
+    <h2>Radar <span class="muted" id="frameInfo"></span></h2>
+    <div id="srcTabs">
+      <button data-src="ct" class="on">Climatempo (POA)</button>
+      <button data-src="rv">RainViewer (com horário)</button>
+    </div>
+    <div id="radarTime"></div>
+    <div id="rvMap" hidden></div>
     <div id="radarBox">
       <div id="radarLayer">
         <img id="radarImg" alt="Radar meteorológico de Porto Alegre">
@@ -98,8 +128,8 @@
       <button id="prevBtn" title="Anterior">⏮️</button>
       <button id="nextBtn" title="Próxima">⏭️</button>
       <select id="span" title="Período da animação">
-        <option value="4">Últimos 15 min</option>
-        <option value="24">Últimas 2 h</option>
+        <option value="15">Últimos 15 min</option>
+        <option value="120">Últimas 2 h</option>
       </select>
       <input type="range" id="frame" min="0" max="3" value="3">
       <label class="zoom">🔍 <input type="range" id="zoom" min="1" max="4" step="0.1" value="1"></label>
@@ -121,7 +151,7 @@
 
   <footer>
     Previsão: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
-    Radar: Climatempo (uso pessoal) · Atualiza sozinho a cada 5 min<br>
+    Radar: Climatempo (uso pessoal) e RainViewer · Rio: ANA · Atualiza sozinho a cada 5 min<br>
     Os textos acima são <b>previsão</b>, não medição: confira sempre o radar.
   </footer>
 </main>
@@ -160,7 +190,7 @@ async function loadForecast() {
     longitude: CITIES.map(c => c.lon).join(","),
     current: "temperature_2m,precipitation,weather_code",
     minutely_15: "precipitation",
-    hourly: "temperature_2m,precipitation,precipitation_probability",
+    hourly: "temperature_2m,precipitation,precipitation_probability,wind_gusts_10m,cape,weather_code",
     forecast_days: 3,
     timezone: "America/Sao_Paulo",
   });
@@ -206,12 +236,44 @@ function summarize(f) {
     sub: `Probabilidade máxima: ${maxProb}%` };
 }
 
+// ===================== Alerta de temporal =====================
+// Olha as próximas 12 h: trovoada (código 95–99), rajadas fortes e instabilidade (CAPE)
+function stormAlert(f) {
+  const now = Date.now();
+  const h = f.hourly.time.map((t, i) => ({
+    t: parseT(t), gust: f.hourly.wind_gusts_10m[i] ?? 0, cape: f.hourly.cape[i] ?? 0,
+    code: f.hourly.weather_code[i] ?? 0, prob: f.hourly.precipitation_probability[i] ?? 0,
+  })).filter(x => x.t.getTime() + 3600e3 > now).slice(0, 12);
+  if (!h.length) return null;
+
+  const items = [];
+  let level = 0; // 0 nada, 1 atenção, 2 forte
+  const thunder = h.find(x => x.code >= 95);
+  if (thunder) { items.push(`⛈️ Possível trovoada a partir das ${hh(thunder.t)}`); level = Math.max(level, 1); }
+  const g = h.reduce((a, b) => (b.gust > a.gust ? b : a));
+  if (g.gust >= 60) {
+    items.push(`💨 Rajadas de até ${Math.round(g.gust)} km/h por volta das ${hh(g.t)}`);
+    level = Math.max(level, g.gust >= 80 ? 2 : 1);
+  }
+  const c = h.reduce((a, b) => (b.cape > a.cape ? b : a));
+  if (!thunder && c.cape >= 1500 && c.prob >= 40) {
+    items.push(`⚡ Atmosfera instável à tarde/noite (CAPE ${Math.round(c.cape)})`);
+    level = Math.max(level, 1);
+  }
+  if (thunder && (c.cape >= 2500 || g.gust >= 80)) level = 2;
+  return { level, items, maxGust: Math.round(g.gust) };
+}
+
 function renderCards() {
   const box = document.getElementById("cards");
   box.innerHTML = "";
   CITIES.forEach(c => {
     const f = forecasts[c.id];
     const s = summarize(f);
+    const a = stormAlert(f);
+    const alertHtml = a && a.level
+      ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
+      : (a ? `<div class="sub">💨 Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : "");
     const btn = document.createElement("button");
     btn.className = "card" + (c.id === selected ? " active" : "");
     btn.innerHTML = `
@@ -219,7 +281,8 @@ function renderCards() {
         <span class="badge ${s.wet ? "wet" : "dry"}">${s.badge}</span></div>
       <div class="temp">${Math.round(f.current.temperature_2m)}°C</div>
       <div class="answer">${s.text}</div>
-      <div class="sub">${s.sub}</div>`;
+      <div class="sub">${s.sub}</div>
+      ${alertHtml}`;
     btn.onclick = () => selectCity(c.id);
     box.appendChild(btn);
   });
@@ -234,9 +297,18 @@ function selectCity(id) {
 }
 
 // ===================== 2. Radar =====================
-let span = 4;   // quantos quadros animar: 4 = últimos 15 min, 24 = últimas 2 h
-let frame = span; // índice da imagem (maior = mais antiga)
+// Duas fontes: Climatempo (imagens do radar de POA, 1 a cada 5 min, sem horário legível pelo código)
+// e RainViewer (mapa com horário exato de cada imagem, 1 a cada 10 min).
+// Em ambas, o quadro 1 é o mais recente.
+let src = localStorageGet("radarSrc") || "ct";
+let spanMin = 15;      // minutos animados: 15 ou 120
+let frame = 1;
 let playing = true, timer = null, frames = [];
+let rv = { map: null, layers: [], times: [], markers: [] };
+
+const STEP_MIN = () => (src === "ct" ? 5 : 10);
+const available = () => (src === "ct" ? RADAR_FRAMES : rv.layers.length);
+const nFrames = () => Math.max(1, Math.min(available(), Math.floor(spanMin / STEP_MIN()) + 1));
 
 function cityPos(c) {
   const b = RADAR_BOUNDS;
@@ -251,41 +323,77 @@ function buildMarkers() {
   }).join("");
 }
 
-function loadRadar() {
-  const stamp = Math.floor(Date.now() / REFRESH_MS); // muda a cada 10 min, evita cache velho
+// ----- Climatempo -----
+function loadClimatempo() {
+  const stamp = Math.floor(Date.now() / REFRESH_MS); // evita cache velho
   frames = [];
   for (let i = 1; i <= RADAR_FRAMES; i++) {
     const img = new Image();
     img.src = `${RADAR_URL(i)}?v=${stamp}`;
     frames[i] = img.src;
   }
-  showFrame(frame);
 }
 
+// ----- RainViewer -----
+function initRainViewerMap() {
+  if (rv.map) return;
+  const c = CITIES.find(x => x.id === selected);
+  rv.map = L.map("rvMap", { zoomControl: true }).setView([c.lat, c.lon], 8);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 12,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Radar <a href="https://www.rainviewer.com/">RainViewer</a>',
+  }).addTo(rv.map);
+  CITIES.forEach(c => L.circleMarker([c.lat, c.lon], { radius: 7, color: "#fff", weight: 2, fillColor: c.color, fillOpacity: 1 })
+    .bindTooltip(c.name, { permanent: true, direction: "right", className: "city-tip" }).addTo(rv.map));
+}
+
+async function loadRainViewer() {
+  initRainViewerMap();
+  const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+  const d = await res.json();
+  rv.layers.forEach(l => rv.map.removeLayer(l));
+  const past = d.radar.past;                // mais antiga -> mais recente
+  rv.times = past.map(p => new Date(p.time * 1000)).reverse(); // índice 0 = mais recente
+  rv.layers = past.map((p, k) => L.tileLayer(`${d.host}${p.path}/256/{z}/{x}/{y}/2/1_1.png`, {
+    opacity: 0, maxNativeZoom: 7, maxZoom: 12, zIndex: 10 + k,
+  }).addTo(rv.map)).reverse();
+}
+
+// ----- Controles comuns -----
 function showFrame(i) {
-  frame = i;
-  document.getElementById("radarImg").src = frames[i];
-  document.getElementById("frame").value = span - i; // slider: esquerda = antiga
-  const ago = i === 1 ? "imagem mais recente" : `${(i - 1) * 5} min antes da mais recente`;
-  document.getElementById("frameInfo").textContent = `· ${ago}`;
-}
-
-function setSpan(n) {
-  span = n;
+  frame = Math.min(Math.max(1, i), nFrames());
+  const n = nFrames();
+  const t = document.getElementById("radarTime");
+  if (src === "ct") {
+    if (frames[frame]) document.getElementById("radarImg").src = frames[frame];
+    const ago = frame === 1 ? "imagem mais recente" : `${(frame - 1) * 5} min antes da mais recente`;
+    document.getElementById("frameInfo").textContent = `· ${ago}`;
+    t.className = "";
+    t.innerHTML = "🕒 O horário está no canto inferior direito da imagem. Este radar pode chegar com <b>até ~1 h de atraso</b>; para o horário exato, use o RainViewer.";
+  } else if (rv.layers.length) {
+    rv.layers.forEach((l, k) => l.setOpacity(k === frame - 1 ? 0.75 : 0));
+    const when = rv.times[frame - 1];
+    const newestAge = Math.round((Date.now() - rv.times[0]) / 60000);
+    const age = Math.round((Date.now() - when) / 60000);
+    document.getElementById("frameInfo").textContent = `· ${hhmm(when)}`;
+    t.className = newestAge > 25 ? "stale" : "";
+    t.innerHTML = `🕒 Imagem de <b>${hhmm(when)}</b> (há ${age} min)` +
+      (newestAge > 25 ? ` · ⚠️ a imagem mais nova já tem ${newestAge} min` : "");
+  }
   const s = document.getElementById("frame");
-  s.max = span - 1;
-  showFrame(Math.min(frame, span));
+  s.max = n - 1;
+  s.value = n - frame; // slider: esquerda = antiga
 }
 
 function step(dir) { // dir = +1 avança no tempo
+  const n = nFrames();
   let i = frame - dir;
-  if (i < 1) i = span; if (i > span) i = 1;
+  if (i < 1) i = n; if (i > n) i = 1;
   showFrame(i);
 }
 
 function tick() {
-  // pausa 2 s no quadro mais recente antes de recomeçar
-  const delay = frame === 1 ? 2000 : 400;
+  const delay = frame === 1 ? 2000 : 500; // pausa no quadro mais recente
   timer = setTimeout(() => { if (playing) { step(1); tick(); } }, delay);
 }
 
@@ -295,9 +403,35 @@ function setPlaying(p) {
   if (p) tick();
 }
 
+async function setSource(s) {
+  src = s;
+  localStorageSet("radarSrc", s);
+  document.querySelectorAll("#srcTabs button").forEach(b => b.classList.toggle("on", b.dataset.src === s));
+  document.getElementById("radarBox").hidden = s !== "ct";
+  document.getElementById("rvMap").hidden = s !== "rv";
+  document.querySelector("label.zoom").hidden = s !== "ct";
+  if (s === "rv") {
+    initRainViewerMap();
+    rv.map.invalidateSize();
+    if (!rv.layers.length) {
+      try { await loadRainViewer(); }
+      catch (e) { document.getElementById("radarTime").textContent = "Erro ao carregar RainViewer: " + e.message; }
+    }
+  }
+  showFrame(nFrames());
+}
+
+async function loadRadar() {
+  loadClimatempo();
+  if (rv.map) { try { await loadRainViewer(); } catch {} }
+  showFrame(frame);
+}
+
 function applyZoom() {
+  const c = CITIES.find(x => x.id === selected);
+  if (rv.map) rv.map.setView([c.lat, c.lon], rv.map.getZoom());
   const z = parseFloat(document.getElementById("zoom").value);
-  const p = cityPos(CITIES.find(c => c.id === selected));
+  const p = cityPos(c);
   const layer = document.getElementById("radarLayer");
   layer.style.transformOrigin = `${p.x}% ${p.y}%`;
   layer.style.transform = `scale(${z})`;
@@ -308,9 +442,10 @@ function applyZoom() {
 document.getElementById("playBtn").onclick = () => setPlaying(!playing);
 document.getElementById("prevBtn").onclick = () => { setPlaying(false); step(-1); };
 document.getElementById("nextBtn").onclick = () => { setPlaying(false); step(1); };
-document.getElementById("frame").oninput = e => { setPlaying(false); showFrame(span - +e.target.value); };
-document.getElementById("span").onchange = e => setSpan(+e.target.value);
+document.getElementById("frame").oninput = e => { setPlaying(false); showFrame(nFrames() - +e.target.value); };
+document.getElementById("span").onchange = e => { spanMin = +e.target.value; showFrame(nFrames()); };
 document.getElementById("zoom").oninput = applyZoom;
+document.querySelectorAll("#srcTabs button").forEach(b => b.onclick = () => setSource(b.dataset.src));
 
 // ===================== 3. Gráfico =====================
 // Maior sequência de horas secas (chuva < 0,1 mm e prob < 30%) entre 6h e 22h nas próximas 24 h
@@ -382,9 +517,63 @@ function renderChart() {
   document.getElementById("chart").innerHTML = s;
 }
 
+// ===================== Rio dos Sinos (ANA) =====================
+// Estação telemétrica 87380000 "Campo Bom" da ANA: nível (cm), vazão e chuva a cada 15 min
+const RIVER_STATION = "87380000";
+const dmy = d => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+
+async function loadRiver() {
+  const box = document.getElementById("river");
+  try {
+    const end = new Date(), start = new Date(Date.now() - 3 * 86400e3);
+    const url = `https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos?codEstacao=${RIVER_STATION}&dataInicio=${dmy(start)}&dataFim=${dmy(end)}`;
+    const xml = new DOMParser().parseFromString(await (await fetch(url)).text(), "text/xml");
+    const rows = [...xml.getElementsByTagName("DadosHidrometereologicos")].map(r => ({
+      t: new Date(r.getElementsByTagName("DataHora")[0]?.textContent.trim().replace(" ", "T")),
+      lvl: parseFloat(r.getElementsByTagName("Nivel")[0]?.textContent),
+      rain: parseFloat(r.getElementsByTagName("Chuva")[0]?.textContent),
+    })).filter(r => !isNaN(r.lvl) && !isNaN(r.t)).sort((a, b) => a.t - b.t);
+    if (!rows.length) throw new Error("sem leituras recentes");
+    renderRiver(rows);
+  } catch (e) {
+    box.innerHTML = `<h2>🌊 Rio dos Sinos em Campo Bom</h2><div class="muted">Não foi possível buscar os dados da ANA (${e.message}).</div>`;
+  }
+}
+
+function renderRiver(rows) {
+  const last = rows[rows.length - 1];
+  const at = hoursAgo => { // leitura mais próxima de X horas antes da última
+    const target = last.t - hoursAgo * 3600e3;
+    return rows.reduce((a, b) => (Math.abs(b.t - target) < Math.abs(a.t - target) ? b : a));
+  };
+  const d6 = last.lvl - at(6).lvl, d24 = last.lvl - at(24).lvl;
+  const trend = Math.abs(d6) < 3 ? ["➡️", "estável"] : d6 > 0 ? ["⬆️", "subindo"] : ["⬇️", "baixando"];
+  const rain24 = rows.filter(r => r.t > last.t - 24 * 3600e3).reduce((s, r) => s + (r.rain || 0), 0);
+  const fmtCm = v => `${v > 0 ? "+" : ""}${Math.round(v)} cm`;
+  const age = Math.round((Date.now() - last.t) / 60000);
+
+  // mini gráfico dos últimos 3 dias
+  const W = 600, H = 70, min = Math.min(...rows.map(r => r.lvl)), max = Math.max(...rows.map(r => r.lvl));
+  const t0 = rows[0].t, t1 = last.t, span = Math.max(1, max - min);
+  const pts = rows.map(r => `${((r.t - t0) / (t1 - t0 || 1) * W).toFixed(1)},${(H - 6 - (r.lvl - min) / span * (H - 12)).toFixed(1)}`).join(" ");
+
+  document.getElementById("river").innerHTML = `
+    <h2>🌊 Rio dos Sinos em Campo Bom</h2>
+    <div class="river-grid">
+      <div><div class="big">${(last.lvl / 100).toFixed(2).replace(".", ",")} m</div><div class="muted">nível às ${hhmm(last.t)} (há ${age} min)</div></div>
+      <div><div class="big">${trend[0]} ${trend[1]}</div><div class="muted">${fmtCm(d6)} em 6 h · ${fmtCm(d24)} em 24 h</div></div>
+      <div><div class="big">${fmtMm(rain24)} mm</div><div class="muted">chuva medida na estação em 24 h</div></div>
+    </div>
+    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}"/></svg>
+    <div class="muted">Últimos 3 dias · de ${(min / 100).toFixed(2).replace(".", ",")} m a ${(max / 100).toFixed(2).replace(".", ",")} m ·
+      Fonte: <a href="https://www.snirh.gov.br/hidrotelemetria/" target="_blank" rel="noopener">ANA</a>, estação ${RIVER_STATION}.
+      Para cotas de alerta, consulte a Defesa Civil.</div>`;
+}
+
 // ===================== Inicialização =====================
 async function refresh() {
   loadRadar();
+  loadRiver();
   try {
     await loadForecast();
     renderCards();
@@ -399,6 +588,7 @@ if (!CITIES.some(c => c.id === selected)) selected = CITIES[0].id;
 buildMarkers();
 applyZoom();
 refresh();
+setSource(src === "rv" ? "rv" : "ct");
 setPlaying(true);
 setInterval(refresh, REFRESH_MS);
 </script>
