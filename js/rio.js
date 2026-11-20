@@ -32,6 +32,18 @@ async function fetchStation(code, days, timeoutMs = 20000) {
   return rows;
 }
 
+// O servidor da ANA às vezes falha por um instante: tenta de novo (após 3 s e 6 s)
+// antes de mostrar "sem dados agora". Se a estação não tem leituras, não adianta repetir.
+async function fetchStationRetry(code, days, timeoutMs, waits = [3000, 6000]) {
+  for (let i = 0; ; i++) {
+    try { return await fetchStation(code, days, timeoutMs); }
+    catch (e) {
+      if (i >= waits.length || e.message === "sem leituras recentes") throw e;
+      await new Promise(r => setTimeout(r, waits[i]));
+    }
+  }
+}
+
 // Nível atual, variação em 6 h e 24 h e tendência
 function riverStats(rows, stableCm = 3) {
   const last = rows[rows.length - 1];
@@ -47,7 +59,7 @@ function riverStats(rows, stableCm = 3) {
 async function loadRiver() {
   const box = document.getElementById("river");
   const [main, ...others] = await Promise.allSettled([
-    fetchStation(RIVER_STATION, 3, 30000), ...RIVER_OTHERS.map(s => fetchStation(s.code, 2, 15000)),
+    fetchStationRetry(RIVER_STATION, 3, 30000), ...RIVER_OTHERS.map(s => fetchStationRetry(s.code, 2, 15000)),
   ]);
   if (main.status !== "fulfilled") {
     box.innerHTML = `<h2>${uIcon("wave", "u-ic h-ic")}Rio dos Sinos em Campo Bom</h2><div class="muted">Não foi possível buscar os dados da ANA (${main.reason.message}). <button class="linkbtn" onclick="loadRiver()">Tentar de novo</button></div>`;
