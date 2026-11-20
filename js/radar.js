@@ -2,7 +2,7 @@
 // Duas fontes: Climatempo (imagens do radar de POA, 1 a cada 5 min, sem horário legível pelo código)
 // e RainViewer (mapa com horário exato de cada imagem, 1 a cada 10 min).
 // Em ambas, o quadro 1 é o mais recente.
-let src = localStorageGet("radarSrc") || "ct";
+let src = "ct"; // sempre abre na Climatempo (mais detalhada); o RainViewer fica na aba ao lado
 // período da animação: "15" (últimos 15 min), "120" (últimas 2 h), "next" (próximas 2 h), "all" (últimas 2 h + próximas 2 h)
 // "next" e "all" só existem no RainViewer, que tem a previsão desenhada
 let mode = "15";
@@ -178,7 +178,6 @@ function setPlaying(p) {
 
 async function setSource(s) {
   src = s;
-  localStorageSet("radarSrc", s);
   document.querySelectorAll("#srcTabs button").forEach(b => b.classList.toggle("on", b.dataset.src === s));
   document.getElementById("radarBox").hidden = s !== "ct";
   document.getElementById("rvMap").hidden = s !== "rv";
