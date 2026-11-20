@@ -39,7 +39,8 @@
   .card .temp { font-size: 1.6rem; font-weight: 600; }
   .card .answer { margin: 8px 0 4px; font-size: 1.02rem; line-height: 1.35; }
   .card .sub { color: var(--muted); font-size: .85rem; }
-  #cards { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .cardgrid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  #details .model { margin-top: 6px; }
   .wx-head { display: flex; align-items: center; gap: 12px; }
   .wx-icon { font-size: 2.6rem; line-height: 1; }
   .wx-name { flex: 1; min-width: 0; }
@@ -127,6 +128,9 @@
     <span class="muted" id="updated">Carregando…</span>
   </header>
 
+  <!-- 1. Resposta direta: tempo agora + próxima hora -->
+  <section id="cards" class="cardgrid"></section>
+
   <!-- 2. Radar -->
   <section class="panel">
     <h2>Radar <span class="muted" id="frameInfo"></span></h2>
@@ -157,8 +161,8 @@
     </div>
   </section>
 
-  <!-- 1. Resposta direta -->
-  <section id="cards"></section>
+  <!-- 1b. Detalhes por cidade (modelo, alertas, 5 dias) -->
+  <section id="details" class="cardgrid"></section>
 
   <!-- 3. Gráfico -->
   <section class="panel">
@@ -346,8 +350,8 @@ function nowcastHtml(n) {
 }
 
 function renderCards() {
-  const box = document.getElementById("cards");
-  box.innerHTML = "";
+  const box = document.getElementById("cards"), det = document.getElementById("details");
+  box.innerHTML = ""; det.innerHTML = "";
   CITIES.forEach(c => {
     const f = forecasts[c.id];
     if (!f) return;
@@ -369,13 +373,19 @@ function renderCards() {
         <div class="wx-now"><div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
           <div class="muted">${deg(f.daily.temperature_2m_max[0])} / ${deg(f.daily.temperature_2m_min[0])}</div></div>
       </div>
-      ${nowcastHtml(nowcast[c.id])}
-      <div class="sub model">📈 Modelo: ${s.text} ${s.sub}</div>
-      ${alertHtml}
-      ${daysHtml(f)}`;
+      ${nowcastHtml(nowcast[c.id])}`;
     card.onclick = () => selectCity(c.id);
     card.onkeydown = e => { if (e.key === "Enter") selectCity(c.id); };
     box.appendChild(card);
+    const dc = document.createElement("div");
+    dc.className = "card" + (c.id === selected ? " active" : "");
+    dc.innerHTML = `
+      <div class="city"><span><span class="dot" style="background:${c.color}"></span>${c.name}</span></div>
+      <div class="sub model">📈 Modelo: ${s.text} ${s.sub}</div>
+      ${alertHtml}
+      ${daysHtml(f)}`;
+    dc.onclick = () => selectCity(c.id);
+    det.appendChild(dc);
   });
 }
 
