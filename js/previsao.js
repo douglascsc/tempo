@@ -167,13 +167,9 @@ function renderCards() {
   const c = CITIES.find(x => x.id === selected), f = forecasts[c.id];
   if (!f) return;
   const a = stormAlert(f);
-  const conf = confidence(nowcast[c.id], f);
   const alertHtml = a && a.level
     ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
     : (a ? `<div class="sub">${uIcon("wind")} Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : `<div class="sub">Sem alertas nas próximas 12 h</div>`);
-  const confHtml = conf ? `<div class="conf ${conf.ok ? "ok" : "warn"}">${conf.txt}${conf.ok ? "" : ` ${infoBtn("conf-" + c.id)}
-    <div id="conf-${c.id}" class="muted ${infoCls("conf-" + c.id)}">O radar mostra a chuva que existe agora; o modelo é uma simulação do tempo.
-    Para a próxima hora, confie mais no radar.</div>`}</div>` : "";
 
   box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
     <h3 class="vh">${c.name}</h3>
@@ -182,7 +178,7 @@ function renderCards() {
       <div class="wx-name"><div class="muted">agora</div>
         <div class="muted"><span class="nw">máx ${deg(f.daily.temperature_2m_max[0])}</span> / <span class="nw">mín ${deg(f.daily.temperature_2m_min[0])}</span></div></div>
     </div>
-    ${nowcastHtml(nowcast[c.id], confHtml)}
+    ${nowcastHtml(nowcast[c.id])}
   </article>`;
 
   det.innerHTML = `<article class="card wide-det">
