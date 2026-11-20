@@ -134,9 +134,11 @@ const INT = [ // dBZ mínimo -> rótulo e cor
 ];
 const intensity = dbz => INT.find(([m]) => dbz >= m) || [0, "sem chuva", "var(--line)"];
 
-function nowcastHtml(n) {
-  if (!n) return `<div class="nc"><div class="skel-line"></div><div class="skel-line short"></div><div class="nc-blocks skel-blocks"></div></div>`;
-  if (n.error) return `<div class="nc muted">Radar indisponível no momento. <button class="linkbtn" onclick="refresh()">Tentar de novo</button></div>`;
+// Resposta do radar em duas partes: texto (o que vem aí) e linha do tempo (4 blocos de 15 min)
+function nowcastHtml(n, confHtml = "") {
+  if (!n) return `<div class="nc-text"><div class="skel-line"></div><div class="skel-line short"></div></div>
+    <div class="nc-tl"><div class="nc-blocks skel-blocks"></div></div>`;
+  if (n.error) return `<div class="nc-text muted">Radar indisponível no momento. <button class="linkbtn" onclick="refresh()">Tentar de novo</button></div><div class="nc-tl"></div>`;
   let head;
   // a imagem do radar tem alguns minutos: chuva a poucos km pode já estar chegando
   if (n.firstMin === 0 && n.nearKm != null && n.nearKm >= 2) head = `${wIcon("rain", "w-in")} <b>Chuva chegando agora</b> — ${intensity(n.firstDbz)[1]}`;
@@ -145,101 +147,91 @@ function nowcastHtml(n) {
   else head = `${wIcon("partly", "w-in")} <b>Sem sinal de chuva</b> na próxima hora`;
   const near = n.nearKm == null ? "nenhuma num raio de 120 km"
     : n.nearKm < 2 ? "sobre a cidade" : `<b>${Math.round(n.nearKm)} km</b> ao ${n.nearDir}`;
-  return `<div class="nc">
-    <div>${head} <span class="src">· radar</span></div>
-    <div class="nc-near">Chuva mais próxima: ${near}</div>
-    <div class="nc-lbl">Próxima hora em min (tendência)${radarMotion ? ` <span class="muted">· radar às ${hhmm(radarMotion.time)}</span>` : ""}:</div>
-    <div class="nc-blocks">${n.blocks.map((v, i) => {
-      const [, lbl, col] = intensity(v);
-      return `<div><div class="muted nc-t">${i * 15}–${i * 15 + 15}</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
-    }).join("")}</div></div>`;
+  return `<div class="nc-text">
+      <div class="nc-head">${head} <span class="src">· radar</span></div>
+      <div class="nc-near">Chuva mais próxima: ${near}</div>
+      ${confHtml}
+    </div>
+    <div class="nc-tl">
+      <div class="nc-lbl">Próxima hora em min (tendência)${radarMotion ? ` <span class="muted">· radar às ${hhmm(radarMotion.time)}</span>` : ""}</div>
+      <div class="nc-blocks">${n.blocks.map((v, i) => {
+        const [, lbl, col] = intensity(v);
+        return `<div><div class="muted nc-t">${i * 15}–${i * 15 + 15}</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
+      }).join("")}</div>
+    </div>`;
 }
 
+// Mostra só a cidade escolhida no seletor, em cartões largos e baixos
 function renderCards() {
   const box = document.getElementById("cards"), det = document.getElementById("details");
-  const keep = [box.scrollLeft, det.scrollLeft]; // no celular os cartões deslizam: mantém a posição
-  box.innerHTML = ""; det.innerHTML = "";
-  CITIES.forEach(c => {
-    const f = forecasts[c.id];
-    if (!f) return;
-    const a = stormAlert(f);
-    const conf = confidence(nowcast[c.id], f);
-    const [icon, cond] = wx(f.current.weather_code, f.current.is_day);
-    const alertHtml = a && a.level
-      ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
-      : (a ? `<div class="sub">${uIcon("wind")} Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : "");
-    const confHtml = conf ? `<div class="conf ${conf.ok ? "ok" : "warn"}">${conf.txt}${conf.ok ? "" : ` ${infoBtn("conf-" + c.id)}
-      <div id="conf-${c.id}" class="muted ${infoCls("conf-" + c.id)}">O radar mostra a chuva que existe agora; o modelo é uma simulação do tempo.
-      Para a próxima hora, confie mais no radar.</div>`}</div>` : "";
-    // cartões: o clique do mouse seleciona a cidade; teclado e leitor de tela usam o seletor de cidades (botões reais)
-    const card = document.createElement("article");
-    card.className = "card city-top" + (c.id === selected ? " active" : "");
-    card.style.setProperty("--city", c.color); // borda colorida no topo identifica a cidade (mesma cor do seletor)
-    card.dataset.id = c.id;
-    card.innerHTML = `
-      <div class="wx-head">
-        <div class="wx-icon">${wIcon(icon)}</div>
-        <div class="wx-name"><div class="wx-cond">${cond}</div>
-          <h3 class="vh">${c.name}</h3></div>
-        <div class="wx-now"><div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
-          <div class="muted">máx ${deg(f.daily.temperature_2m_max[0])} / mín ${deg(f.daily.temperature_2m_min[0])}</div></div>
-      </div>
-      ${nowcastHtml(nowcast[c.id])}
-      ${confHtml}`;
-    card.onclick = e => { if (!e.target.closest("button")) selectCity(c.id); };
-    box.appendChild(card);
-    const dc = document.createElement("article");
-    dc.className = "card" + (c.id === selected ? " active" : "");
-    dc.dataset.id = c.id;
-    dc.innerHTML = `
+  const c = CITIES.find(x => x.id === selected), f = forecasts[c.id];
+  if (!f) return;
+  const a = stormAlert(f);
+  const conf = confidence(nowcast[c.id], f);
+  const [icon, cond] = wx(f.current.weather_code, f.current.is_day);
+  const alertHtml = a && a.level
+    ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
+    : (a ? `<div class="sub">${uIcon("wind")} Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : `<div class="sub">Sem alertas nas próximas 12 h</div>`);
+  const confHtml = conf ? `<div class="conf ${conf.ok ? "ok" : "warn"}">${conf.txt}${conf.ok ? "" : ` ${infoBtn("conf-" + c.id)}
+    <div id="conf-${c.id}" class="muted ${infoCls("conf-" + c.id)}">O radar mostra a chuva que existe agora; o modelo é uma simulação do tempo.
+    Para a próxima hora, confie mais no radar.</div>`}</div>` : "";
+
+  box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
+    <h3 class="vh">${c.name}</h3>
+    <div class="wx-head">
+      <div class="wx-icon">${wIcon(icon)}</div>
+      <div class="wx-name"><div class="wx-cond">${cond}</div>
+        <div class="muted">máx ${deg(f.daily.temperature_2m_max[0])} / mín ${deg(f.daily.temperature_2m_min[0])}</div></div>
+      <div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
+    </div>
+    ${nowcastHtml(nowcast[c.id], confHtml)}
+  </article>`;
+
+  det.innerHTML = `<article class="card wide-det">
+    <div class="det-side">
       <h3 class="city"><span><span class="dot" style="background:${c.color}"></span>${c.name}</span></h3>
       ${alertHtml}
-      ${daysHtml(f)}`;
-    dc.onclick = e => { if (!e.target.closest("button")) selectCity(c.id); };
-    det.appendChild(dc);
-  });
-  box.scrollLeft = keep[0]; det.scrollLeft = keep[1];
+    </div>
+    ${daysHtml(f)}
+  </article>`;
 }
 
-// ----- Seletor de cidade: controla gráfico, radar e (no celular) os dois carrosséis -----
+// ----- Seletor de cidade: controla os cartões, o gráfico e o radar -----
 function renderCitySel() {
   document.getElementById("citySel").innerHTML = CITIES.map(c =>
     `<button data-id="${c.id}" aria-pressed="${c.id === selected}"><span class="dot" style="background:${c.color}"></span>${c.short || c.name}</button>`).join("");
   document.querySelectorAll("#citySel button").forEach(b => b.onclick = () => selectCity(b.dataset.id));
 }
 
-// No celular: leva os carrosséis até o cartão da cidade (exceto o que a pessoa acabou de deslizar)
-function syncCarousels(except, behavior = "smooth") {
-  if (!IS_PHONE) return;
-  const idx = CITIES.findIndex(c => c.id === selected);
-  for (const el of [document.getElementById("cards"), document.getElementById("details")]) {
-    if (el === except || !el.children[idx]) continue;
-    el.scrollTo({ left: el.children[idx].offsetLeft - el.children[0].offsetLeft, behavior });
-  }
-}
-
-// Deslizar um carrossel escolhe a cidade que ficou na tela e alinha o outro carrossel
-function watchCarousel(el) {
-  let t;
-  el.addEventListener("scroll", () => {
-    clearTimeout(t);
-    t = setTimeout(() => {
-      if (!el.children.length || el.querySelector(".skel")) return;
-      const w = el.children.length > 1 ? el.children[1].offsetLeft - el.children[0].offsetLeft : 1;
-      const idx = Math.max(0, Math.min(el.children.length - 1, Math.round(el.scrollLeft / w)));
-      const id = CITIES[idx]?.id;
-      if (id && id !== selected) selectCity(id, el);
-    }, 150);
+// No celular, deslizar o dedo sobre o cartão troca para a cidade seguinte/anterior
+function watchSwipe(el) {
+  let x0 = null, y0 = null;
+  el.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  el.addEventListener("touchend", e => {
+    if (x0 == null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return; // só gesto horizontal claro
+    const i = CITIES.findIndex(c => c.id === selected);
+    const next = CITIES[(i + (dx < 0 ? 1 : -1) + CITIES.length) % CITIES.length];
+    selectCity(next.id);
   }, { passive: true });
 }
 
-function selectCity(id, fromCarousel = null) {
+function selectCity(id) {
   selected = id;
   focusAll = false;
   localStorageSet("cidade", id);
   renderCitySel();
   if (Object.keys(forecasts).length) { renderCards(); renderChart(); }
   applyZoom();
-  syncCarousels(fromCarousel);
+  updateRiver();
+}
+
+// O Rio dos Sinos só aparece (e só é consultado) quando Campo Bom está escolhida
+function updateRiver() {
+  const box = document.getElementById("river"), show = selected === "cb";
+  box.hidden = !show;
+  if (show && box.querySelector(".skel-line")) loadRiver(); // ainda não carregou
 }
 

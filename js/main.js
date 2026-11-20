@@ -5,13 +5,12 @@ let lastRefresh = 0;
 async function refresh() {
   lastRefresh = Date.now();
   loadRadar();
-  loadRiver();
+  if (selected === "cb") loadRiver();
   const st = document.getElementById("updated");
   try {
     await loadForecast();
     renderCards();
     renderChart();
-    syncCarousels(null, "auto");
     runNowcast().then(() => { renderCards(); });
     lastOk = new Date();
     st.className = "muted";
@@ -41,6 +40,7 @@ document.getElementById("zoomIcon").innerHTML = uIcon("search");
 
 if (!CITIES.some(c => c.id === selected)) selected = CITIES[0].id;
 renderCitySel();
+updateRiver();
 buildMarkers();
 // no celular o radar já abre aproximado em Campo Bom + Sapucaia
 if (IS_PHONE) document.getElementById("zoom").value = 4; // zoom máximo
@@ -51,8 +51,8 @@ addEventListener("resize", () => {
   if (IS_PHONE) applyZoom();
   clearTimeout(resizeT); resizeT = setTimeout(renderChart, 200); // gráfico acompanha a largura da tela
 });
-watchCarousel(document.getElementById("cards"));
-watchCarousel(document.getElementById("details"));
+watchSwipe(document.getElementById("cards"));
+watchSwipe(document.getElementById("details"));
 refresh();
 setSource(src === "rv" ? "rv" : "ct");
 // quem pediu ao sistema "reduzir movimento" recebe o radar parado no quadro mais recente

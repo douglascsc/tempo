@@ -22,7 +22,6 @@ h2 { font-size: 1.05rem; margin: 0 0 10px; }
 section { margin-bottom: 20px; }
 
 /* 1. Cards */
-#cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 .card { background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 14px;
   cursor: pointer; text-align: left; color: inherit; font: inherit; }
 .card.active { border-color: var(--accent); }
@@ -131,15 +130,6 @@ footer a { color: inherit; }
   #radarLayer { width: 150%; margin-left: -25%; }
   #rvMap { height: 440px; }
   #radarControls #frame { order: 10; flex-basis: 100%; }
-  /* cartões lado a lado, deslizando com o dedo */
-  #cards.cardgrid, #details.cardgrid {
-    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px;
-    margin-left: -16px; margin-right: -16px; padding: 2px 16px 6px; scroll-padding: 0 16px;
-    scrollbar-width: none;
-  }
-  #cards.cardgrid::-webkit-scrollbar, #details.cardgrid::-webkit-scrollbar { display: none; }
-  #cards.cardgrid > .card, #details.cardgrid > .card { flex: 0 0 86%; scroll-snap-align: start; }
-  .swipe-hint { display: block; }
   /* abas do radar lado a lado */
   #srcTabs { flex-wrap: nowrap; }
   #srcTabs button { flex: 1; white-space: nowrap; }
@@ -148,7 +138,6 @@ footer a { color: inherit; }
   .river-grid .big { font-size: 1.05rem; }
   .river-grid .muted { font-size: .72rem; }
 }
-.swipe-hint { display: none; text-align: center; font-size: .78rem; color: var(--muted); margin: -12px 0 14px; }
 
 /* selo com o horário recortado da imagem da Climatempo (região da legenda, escala 0,6) */
 .ct-time { display: inline-block; width: 192px; height: 22px; vertical-align: middle; border-radius: 4px;
@@ -267,3 +256,28 @@ h3.wx-city { font-weight: 400; color: var(--muted); }
 /* cartão de cima: a cidade é identificada pela borda colorida (mesma cor do seletor) */
 .card.city-top { border-top: 6px solid var(--city); }
 .card.city-top .wx-head { min-height: 56px; }
+
+/* ===================== Cartão único, largo e baixo (só a cidade escolhida) ===================== */
+.cardgrid { display: block; }
+.card.wide, .card.wide-det { cursor: default; }
+.card.wide { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(220px, 1.2fr) minmax(280px, 1.3fr);
+  gap: 18px; align-items: center; }
+.card.wide .wx-head { min-height: 0; }
+.card.wide .wx-temp { margin-left: auto; }
+.nc-text { font-size: .95rem; line-height: 1.45; }
+.nc-text .conf { margin-top: 6px; }
+.nc-tl .nc-lbl { margin-top: 0; }
+.card.wide-det { display: grid; grid-template-columns: minmax(230px, 1fr) 2.2fr; gap: 18px; align-items: center; }
+.card.wide-det .wx-days { margin-top: 0; padding-top: 0; border-top: none; }
+.det-side .alert, .det-side .sub { margin-top: 6px; }
+/* telas médias: duas linhas */
+@media (max-width: 900px) {
+  .card.wide { grid-template-columns: 1fr 1fr; }
+  .card.wide .wx-head { grid-column: 1 / -1; }
+}
+/* celular: tudo empilhado */
+@media (max-width: 600px) {
+  .card.wide, .card.wide-det { grid-template-columns: 1fr; gap: 10px; }
+  .card.wide-det .wx-days { padding-top: 10px; border-top: 1px solid var(--line); }
+}
+.card.wide .wx-name .muted { white-space: nowrap; }
