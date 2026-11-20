@@ -7,15 +7,15 @@
 <meta name="description" content="Chuva na próxima hora pelo radar, previsão de 5 dias e nível do Rio dos Sinos para Campo Bom, Sapucaia do Sul e Nova Tramandaí.">
 <meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☔</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6feb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z' fill='%231f6feb'/><path d='M12 12v7a2 2 0 0 1-4 0'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 <main>
   <header>
-    <h1>☔ Vai chover?</h1>
+    <h1><span id="h1Icon"></span>Vai chover?</h1>
     <span class="muted" id="updated">Carregando…</span>
   </header>
 
@@ -30,7 +30,7 @@
 
   <!-- 2. Radar -->
   <section class="panel">
-    <h2>Radar <span class="muted" id="frameInfo"></span></h2>
+    <div class="radar-head"><h2>Radar</h2><span class="muted" id="frameInfo"></span></div>
     <div id="radarMotion"></div>
     <div class="muted nc-note phone-info" id="ncNote">A tendência da próxima hora em cada cidade é uma extrapolação do movimento da chuva no radar: indica tendência e pode mudar.</div>
     <div id="srcTabs">
@@ -46,16 +46,23 @@
       </div>
     </div>
     <div id="radarControls">
-      <button id="playBtn" title="Play/Pause" aria-label="Tocar ou pausar a animação">⏸️</button>
-      <button id="prevBtn" title="Anterior" aria-label="Quadro anterior">⏮️</button>
-      <button id="nextBtn" title="Próxima" aria-label="Próximo quadro">⏭️</button>
+      <button id="playBtn" title="Play/Pause" aria-label="Tocar ou pausar a animação"></button>
+      <button id="prevBtn" title="Anterior" aria-label="Quadro anterior"></button>
+      <button id="nextBtn" title="Próxima" aria-label="Próximo quadro"></button>
       <select id="span" title="Período da animação" aria-label="Período da animação">
         <option value="15">Últimos 15 min</option>
         <option value="120">Últimas 2 h</option>
       </select>
       <input type="range" id="frame" min="0" max="3" value="3" aria-label="Momento da animação do radar">
-      <label class="zoom">🔍 <input type="range" id="zoom" min="1" max="4" step="0.1" value="1" aria-label="Zoom do radar"></label>
+      <label class="zoom"><span id="zoomIcon"></span><input type="range" id="zoom" min="1" max="4" step="0.1" value="1" aria-label="Zoom do radar"></label>
     </div>
+    <div class="scale" aria-label="Escala de intensidade da chuva no radar, segundo a Defesa Civil">
+      <div><span class="sw sw1"></span><b>Fraca</b><small>azul e verde</small></div>
+      <div><span class="sw sw2"></span><b>Moderada</b><small>amarelo e laranja</small></div>
+      <div><span class="sw sw3"></span><b>Intensa</b><small>vermelho e rosa</small></div>
+      <div><span class="sw sw4"></span><b>Muito intensa</b><small>roxo a preto</small></div>
+    </div>
+    <div class="muted scale-src">Escala de cores conforme a Defesa Civil.</div>
   </section>
 
   <!-- 1b. Detalhes por cidade (modelo, alertas, 5 dias) -->
@@ -83,7 +90,7 @@
   </section>
 
   <!-- Rio dos Sinos -->
-  <section class="panel" id="river"><h2>🌊 Rio dos Sinos em Campo Bom</h2>
+  <section class="panel" id="river"><h2>Rio dos Sinos em Campo Bom</h2>
     <div class="skel-line"></div><div class="skel-line"></div><div class="skel-line short"></div><div class="skel-box"></div></section>
 
   <footer>
@@ -93,12 +100,13 @@
   </footer>
 </main>
 
-<script src="js/config.js?v=5"></script>
-<script src="js/previsao.js?v=5"></script>
-<script src="js/grafico.js?v=5"></script>
-<script src="js/radar.js?v=5"></script>
-<script src="js/nowcast.js?v=5"></script>
-<script src="js/rio.js?v=5"></script>
-<script src="js/main.js?v=5"></script>
+<script src="js/config.js?v=6"></script>
+<script src="js/icones.js?v=6"></script>
+<script src="js/previsao.js?v=6"></script>
+<script src="js/grafico.js?v=6"></script>
+<script src="js/radar.js?v=6"></script>
+<script src="js/nowcast.js?v=6"></script>
+<script src="js/rio.js?v=6"></script>
+<script src="js/main.js?v=6"></script>
 </body>
 </html>

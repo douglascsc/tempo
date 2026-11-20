@@ -44,9 +44,9 @@ function renderChart() {
   if (dry) {
     const end = new Date(h[dry.end].t.getTime() + 3600e3);
     const dia = h[dry.start].t.getDate() === new Date().getDate() ? "hoje" : "amanhã";
-    dw.innerHTML = `☀️ Melhor janela seca: <b>${dia}, ${hh(h[dry.start].t)}–${hh(end)}</b> (${dry.end - dry.start + 1} h)`;
+    dw.innerHTML = `${wIcon("sun", "w-in")} Melhor janela seca: <b>${dia}, ${hh(h[dry.start].t)}–${hh(end)}</b> (${dry.end - dry.start + 1} h)`;
   } else {
-    dw.innerHTML = "🌧️ Nenhuma janela seca (6h–22h) nas próximas 24 h.";
+    dw.innerHTML = `${wIcon("rain", "w-in")} Nenhuma janela seca (6h–22h) nas próximas 24 h.`;
   }
 
   // desenha no tamanho real da tela (texto nítido, sem distorção e sem rolagem lateral)

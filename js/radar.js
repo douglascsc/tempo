@@ -102,7 +102,7 @@ function drawArrow() {
   const ang = Math.atan2(f.vy, f.vx) * 180 / Math.PI;
   const line = L.polyline([start, [c.lat, c.lon]], { color: "#111", weight: 3, dashArray: "6 6", interactive: false });
   const head = L.marker([c.lat, c.lon], { interactive: false, icon: L.divIcon({ className: "rv-arrow",
-    html: `<div style="transform:rotate(${ang}deg)">➤</div>`, iconSize: [22, 22], iconAnchor: [11, 11] }) });
+    html: `<div style="transform:rotate(${ang}deg)">${uIcon("right")}</div>`, iconSize: [22, 22], iconAnchor: [11, 11] }) });
   // rótulo do lado de fora da seta (oposto à cidade)
   const ox = Math.cos(ang * Math.PI / 180) > 0 ? "calc(-100% - 8px)" : "8px";
   const lbl = L.marker(start, { interactive: false, icon: L.divIcon({ className: "",
@@ -123,8 +123,8 @@ function showFrame(i) {
     t.className = "";
     // no celular o zoom esconde o canto da imagem: mostra o horário recortado da própria imagem
     t.innerHTML = IS_PHONE && frames[frame]
-      ? `🕒 Horário da imagem: <span class="ct-time" style="background-image:url('${frames[frame]}')"></span> ${infoBtn("ctNote")}<div id="ctNote" class="muted ${infoCls("ctNote")}">Pode ter até ~1 h de atraso; para o horário exato, use o RainViewer.</div>`
-      : "🕒 O horário está no canto inferior direito da imagem. Este radar pode chegar com <b>até ~1 h de atraso</b>; para o horário exato, use o RainViewer.";
+      ? `${uIcon("clock")} Horário da imagem: <span class="ct-time" style="background-image:url('${frames[frame]}')"></span> ${infoBtn("ctNote")}<div id="ctNote" class="muted ${infoCls("ctNote")}">Pode ter até ~1 h de atraso; para o horário exato, use o RainViewer.</div>`
+      : `${uIcon("clock")} O horário está no canto inferior direito da imagem. Este radar pode chegar com <b>até ~1 h de atraso</b>; para o horário exato, use o RainViewer.`;
   } else if (rv.layers.length && frame <= 0) {
     rv.layers.forEach(l => l.setOpacity(0));
     rv.future.forEach((l, k) => l.setOpacity(k === -frame ? 0.75 : 0));
@@ -132,7 +132,7 @@ function showFrame(i) {
     const fromNow = Math.round((when - Date.now()) / 60000);
     document.getElementById("frameInfo").textContent = `· previsão ${hhmm(when)}`;
     t.className = "future";
-    t.innerHTML = `🔮 <b>Previsão para ${hhmm(when)}</b> (${fromNow >= 0 ? `daqui ~${fromNow} min` : "agora"}) · extrapolação do movimento, pode mudar`;
+    t.innerHTML = `${uIcon("sparkle")} <b>Previsão para ${hhmm(when)}</b> (${fromNow >= 0 ? `daqui ~${fromNow} min` : "agora"}) · extrapolação do movimento, pode mudar`;
   } else if (rv.layers.length) {
     rv.future.forEach(l => l.setOpacity(0));
     rv.layers.forEach((l, k) => l.setOpacity(k === frame - 1 ? 0.75 : 0));
@@ -140,8 +140,8 @@ function showFrame(i) {
     const newestAge = Math.round((Date.now() - rv.times[0]) / 60000);
     document.getElementById("frameInfo").textContent = `· ${hhmm(when)}`;
     t.className = newestAge > 25 ? "stale" : "";
-    t.innerHTML = `🕒 Imagem <b>${atAgo(when)}</b>` +
-      (newestAge > 25 ? ` · ⚠️ a imagem mais nova já tem ${newestAge} min` : "");
+    t.innerHTML = `${uIcon("clock")} Imagem <b>${atAgo(when)}</b>` +
+      (newestAge > 25 ? ` · ${uIcon("alert")} a imagem mais nova já tem ${newestAge} min` : "");
   }
   const s = document.getElementById("frame");
   s.max = n - minFrame();
@@ -164,7 +164,7 @@ function tick() {
 
 function setPlaying(p) {
   playing = p; clearTimeout(timer);
-  document.getElementById("playBtn").textContent = p ? "⏸️" : "▶️";
+  document.getElementById("playBtn").innerHTML = uIcon(p ? "pause" : "play");
   if (p) tick();
 }
 

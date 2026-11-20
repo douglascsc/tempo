@@ -40,7 +40,7 @@ function riverStats(rows, stableCm = 3) {
     return rows.reduce((a, b) => (Math.abs(b.t - target) < Math.abs(a.t - target) ? b : a));
   };
   const d6 = last.lvl - at(6).lvl, d24 = last.lvl - at(24).lvl;
-  const trend = Math.abs(d6) < stableCm ? ["➡️", "estável"] : d6 > 0 ? ["⬆️", "subindo"] : ["⬇️", "baixando"];
+  const trend = Math.abs(d6) < stableCm ? [uIcon("right"), "estável"] : d6 > 0 ? [uIcon("up"), "subindo"] : [uIcon("down"), "baixando"];
   return { last, d6, d24, trend, age: Math.round((Date.now() - last.t) / 60000) };
 }
 
@@ -50,7 +50,7 @@ async function loadRiver() {
     fetchStation(RIVER_STATION, 3, 30000), ...RIVER_OTHERS.map(s => fetchStation(s.code, 2, 15000)),
   ]);
   if (main.status !== "fulfilled") {
-    box.innerHTML = `<h2>🌊 Rio dos Sinos em Campo Bom</h2><div class="muted">Não foi possível buscar os dados da ANA (${main.reason.message}). <button class="linkbtn" onclick="loadRiver()">Tentar de novo</button></div>`;
+    box.innerHTML = `<h2>${uIcon("wave", "u-ic h-ic")}Rio dos Sinos em Campo Bom</h2><div class="muted">Não foi possível buscar os dados da ANA (${main.reason.message}). <button class="linkbtn" onclick="loadRiver()">Tentar de novo</button></div>`;
     return;
   }
   renderRiver(main.value, others.map((r, i) => ({ ...RIVER_OTHERS[i], stats: r.status === "fulfilled" ? riverStats(r.value, 5) : null })));
@@ -69,13 +69,13 @@ function renderRiver(rows, others) {
   // aviso antecipado: água subindo rio acima tende a chegar a Campo Bom horas depois
   const rising = others.filter(o => o.up && o.stats && o.stats.d6 >= RISE_ALERT_CM);
   const upAlert = rising.length
-    ? `<div class="alert lv1">⚠️ <b>Rio subindo rio acima</b> (${rising.map(o => `${o.name} ${fmtCm(o.stats.d6)} em 6 h`).join(", ")}): o nível em Campo Bom tende a subir nas próximas horas.</div>`
+    ? `<div class="alert lv1">${uIcon("alert")} <b>Rio subindo rio acima</b> (${rising.map(o => `${o.name} ${fmtCm(o.stats.d6)} em 6 h`).join(", ")}): o nível em Campo Bom tende a subir nas próximas horas.</div>`
     : "";
 
   const table = `<table class="rtable">
     <thead><tr><th>Estação</th><th>Tendência</th><th>6 h</th><th>24 h</th><th>Leitura</th></tr></thead>
     <tbody>${others.map(o => o.stats ? `<tr>
-        <td><b>${o.name}</b><div class="muted">${o.up ? "⬆ rio acima" : "⬇ rio abaixo"} · ${o.where}</div></td>
+        <td><b>${o.name}</b><div class="muted">${o.up ? uIcon("up") + " rio acima" : uIcon("down") + " rio abaixo"} · ${o.where}</div></td>
         <td>${o.stats.trend[0]} ${o.stats.trend[1]}</td>
         <td>${fmtCm(o.stats.d6)}</td><td>${fmtCm(o.stats.d24)}</td>
         <td class="muted">${hhmm(o.stats.last.t)}</td></tr>`
@@ -83,7 +83,7 @@ function renderRiver(rows, others) {
     </tbody></table>`;
 
   document.getElementById("river").innerHTML = `
-    <h2>🌊 Rio dos Sinos em Campo Bom</h2>
+    <h2>${uIcon("wave", "u-ic h-ic")}Rio dos Sinos em Campo Bom</h2>
     <div class="river-grid">
       <div><div class="big">${fmtM(last.lvl)} m</div><div class="muted">nível ${atAgo(last.t)}</div></div>
       <div><div class="big">${s.trend[0]} ${s.trend[1]}</div><div class="muted">${fmtCm(s.d6)} em 6 h · ${fmtCm(s.d24)} em 24 h</div></div>
@@ -91,7 +91,7 @@ function renderRiver(rows, others) {
     </div>
     <div class="flood">
       <div class="flood-txt">Cota de inundação: <b>6,80 m</b> · ${last.lvl >= FLOOD_CM
-        ? `<b class="flood-over">⚠️ acima da cota em ${fmtM(last.lvl - FLOOD_CM)} m</b>`
+        ? `<b class="flood-over">${uIcon("alert")} acima da cota em ${fmtM(last.lvl - FLOOD_CM)} m</b>`
         : `faltam <b>${fmtM(FLOOD_CM - last.lvl)} m</b> (${Math.round(last.lvl / FLOOD_CM * 100)}% da cota)`}</div>
       <div class="flood-bar"><div style="width:${Math.min(100, last.lvl / FLOOD_CM * 100)}%;background:${last.lvl >= FLOOD_CM ? "#e5534b" : last.lvl >= FLOOD_CM * 0.8 ? "#d4a72c" : "var(--accent)"}"></div></div>
     </div>

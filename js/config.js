@@ -41,6 +41,7 @@ const hhmm = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-di
 // formato único de horário em toda a página: "às 13:50 (há 6 min)"
 function agoTxt(d) {
   const min = Math.max(0, Math.round((Date.now() - d) / 60000));
+  if (min < 1) return "agora";
   if (min < 60) return `há ${min} min`;
   return `há ${Math.floor(min / 60)} h${min % 60 ? " " + String(min % 60).padStart(2, "0") : ""}`;
 }

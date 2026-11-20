@@ -15,15 +15,29 @@ async function refresh() {
     runNowcast().then(() => { renderCards(); });
     lastOk = new Date();
     st.className = "muted";
-    st.textContent = "Atualizado às " + hhmm(lastOk);
+    tickClock();
   } catch (e) {
     // erro: avisa se os dados na tela estão velhos e oferece tentar de novo
     st.className = "stale-msg";
-    st.innerHTML = (lastOk ? `⚠️ Sem atualização desde ${hhmm(lastOk)} (${agoTxt(lastOk)})` : `⚠️ Não foi possível buscar a previsão`) +
+    st.innerHTML = (lastOk ? `${uIcon("alert")} Sem atualização desde ${hhmm(lastOk)} (${agoTxt(lastOk)})` : `${uIcon("alert")} Não foi possível buscar a previsão`) +
       ` <button class="linkbtn" onclick="refresh()">Tentar de novo</button>`;
     console.error(e);
   }
 }
+
+// Horários relativos ("há X min") avançam sozinhos, sem recarregar a página
+function tickClock() {
+  const st = document.getElementById("updated");
+  if (lastOk && st.className === "muted") st.textContent = "Atualizado " + atAgo(lastOk);
+  renderRadarMotion();
+}
+setInterval(tickClock, 30000);
+
+// ícones fixos da página
+document.getElementById("h1Icon").innerHTML = uIcon("umbrella", "u-ic h1-ic");
+document.getElementById("prevBtn").innerHTML = uIcon("prev");
+document.getElementById("nextBtn").innerHTML = uIcon("next");
+document.getElementById("zoomIcon").innerHTML = uIcon("search");
 
 if (!CITIES.some(c => c.id === selected)) selected = CITIES[0].id;
 renderCitySel();

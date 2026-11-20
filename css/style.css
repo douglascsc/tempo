@@ -214,3 +214,52 @@ h3.wx-city { font-weight: 400; color: var(--muted); }
   .skel, .skel-line, .skel-box, .skel-blocks { animation: none; }
   #radarLayer { transition: none; }
 }
+
+/* ===================== Ícones SVG (no lugar dos emojis) ===================== */
+:root { --ic-sun: #f5a300; --ic-moon: #e2bd2f; --ic-cloud: #c3ccd6; --ic-cloud2: #8792a0;
+  --ic-rain: #2f81f7; --ic-bolt: #f5b301; --ic-snow: #7cb7ff; }
+@media (prefers-color-scheme: dark) {
+  :root { --ic-cloud: #a7b1bc; --ic-cloud2: #6f7b88; --ic-rain: #58a6ff; --ic-moon: #f0d264; }
+}
+.w-ic { display: block; width: 100%; height: 100%; }
+.wx-icon { width: 56px; height: 56px; flex: none; }
+.wx-di { width: 36px; height: 36px; margin: 4px auto; }
+.w-in { display: inline-block; width: 1.4em; height: 1.4em; vertical-align: -0.4em; }
+.i-sun circle { fill: var(--ic-sun); }
+.i-sun line { stroke: var(--ic-sun); stroke-width: 4; stroke-linecap: round; }
+.i-moon { fill: var(--ic-moon); }
+.i-cloud { fill: var(--ic-cloud); stroke: var(--card); stroke-width: 2; }
+.i-cloud2 { fill: var(--ic-cloud2); stroke: var(--card); stroke-width: 2; }
+.i-rain { stroke: var(--ic-rain); stroke-width: 3.5; stroke-linecap: round; }
+.i-rain-dot { fill: var(--ic-rain); }
+.i-snow { fill: var(--ic-snow); }
+.i-bolt { fill: var(--ic-bolt); }
+.i-fog { stroke: var(--ic-cloud2); stroke-width: 3.5; stroke-linecap: round; }
+.u-ic { display: inline-block; width: 1.1em; height: 1.1em; vertical-align: -0.18em; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.u-ic .fill { fill: currentColor; }
+.h1-ic { width: 1.1em; height: 1.1em; margin-right: 8px; color: var(--accent); vertical-align: -0.12em; }
+.h1-ic path:first-child { fill: currentColor; }
+.h-ic { margin-right: 8px; color: var(--accent); }
+#radarControls button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 40px; }
+#radarControls button .u-ic { width: 20px; height: 20px; }
+.zoom .u-ic { color: var(--muted); }
+.rv-arrow .u-ic { width: 24px; height: 24px; stroke: #111; stroke-width: 3; filter: drop-shadow(0 0 2px #fff); }
+.conf.warn .u-ic { color: #b26b00; }
+@media (prefers-color-scheme: dark) { .conf.warn .u-ic { color: #e3b341; } }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* título do radar sem o indicador de quadro dentro (leitor de tela não repete o título) */
+.radar-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.radar-head h2 { margin: 0; }
+
+/* ===================== Legenda da escala da Defesa Civil ===================== */
+.scale { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; font-size: .8rem; }
+.scale > div { display: flex; flex-direction: column; }
+.scale small { color: var(--muted); font-size: .72rem; }
+.sw { display: block; height: 10px; border-radius: 4px; margin-bottom: 4px; }
+.sw1 { background: linear-gradient(90deg, #00d7f0, #0a64ff, #0a3c8c, #00a046, #5ad25a); }
+.sw2 { background: linear-gradient(90deg, #ffee00, #ffc000, #ff8c00); }
+.sw3 { background: linear-gradient(90deg, #ff3c00, #c80000, #ff50c8); }
+.sw4 { background: linear-gradient(90deg, #b43cff, #5a0096, #000); }
+.scale-src { font-size: .75rem; margin-top: 4px; }

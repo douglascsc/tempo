@@ -63,10 +63,10 @@ function modelWetNextHour(f) {
 function confidence(n, f) {
   if (!n || n.error) return null;
   const radarWet = n.firstMin != null, modelWet = modelWetNextHour(f);
-  if (radarWet === modelWet) return { ok: true, txt: "✓ radar e previsão do modelo concordam" };
+  if (radarWet === modelWet) return { ok: true, txt: `${uIcon("check")} radar e previsão do modelo concordam` };
   return { ok: false, txt: radarWet
-    ? "⚠️ O radar vê chuva chegando, mas o modelo não previa: confiança média"
-    : "⚠️ O modelo previa chuva, mas o radar não vê chuva por perto: confiança baixa" };
+    ? `${uIcon("alert")} O radar vê chuva chegando, mas o modelo não previa: confiança média`
+    : `${uIcon("alert")} O modelo previa chuva, mas o radar não vê chuva por perto: confiança baixa` };
 }
 
 // ===================== Alerta de temporal =====================
@@ -82,15 +82,15 @@ function stormAlert(f) {
   const items = [];
   let level = 0; // 0 nada, 1 atenção, 2 forte
   const thunder = h.find(x => x.code >= 95);
-  if (thunder) { items.push(`⛈️ Possível trovoada a partir das ${hh(thunder.t)}`); level = Math.max(level, 1); }
+  if (thunder) { items.push(`${wIcon("storm", "w-in")} Possível trovoada a partir das ${hh(thunder.t)}`); level = Math.max(level, 1); }
   const g = h.reduce((a, b) => (b.gust > a.gust ? b : a));
   if (g.gust >= 60) {
-    items.push(`💨 Rajadas de até ${Math.round(g.gust)} km/h por volta das ${hh(g.t)}`);
+    items.push(`${uIcon("wind")} Rajadas de até ${Math.round(g.gust)} km/h por volta das ${hh(g.t)}`);
     level = Math.max(level, g.gust >= 80 ? 2 : 1);
   }
   const c = h.reduce((a, b) => (b.cape > a.cape ? b : a));
   if (!thunder && c.cape >= 1500 && c.prob >= 40) {
-    items.push(`⚡ Atmosfera instável: risco de temporal por volta das ${hh(c.t)}`);
+    items.push(`${uIcon("bolt")} Atmosfera instável: risco de temporal por volta das ${hh(c.t)}`);
     level = Math.max(level, 1);
   }
   if (thunder && (c.cape >= 2500 || g.gust >= 80)) level = 2;
@@ -100,18 +100,18 @@ function stormAlert(f) {
 // ===================== Tempo agora e 5 dias =====================
 // Códigos WMO usados pela Open-Meteo -> ícone e texto
 function wx(code, isDay = 1) {
-  if (code === 0) return [isDay ? "☀️" : "🌙", "Céu limpo"];
-  if (code === 1) return [isDay ? "🌤️" : "🌙", "Predomínio de sol"];
-  if (code === 2) return ["⛅", "Parcialmente nublado"];
-  if (code === 3) return ["☁️", "Nublado"];
-  if (code === 45 || code === 48) return ["🌫️", "Neblina"];
-  if (code >= 51 && code <= 57) return ["🌦️", "Garoa"];
-  if (code >= 61 && code <= 67) return ["🌧️", "Chuvoso"];
-  if (code >= 71 && code <= 77) return ["🌨️", "Neve"];
-  if (code >= 80 && code <= 82) return ["🌦️", "Pancadas de chuva"];
-  if (code === 85 || code === 86) return ["🌨️", "Pancadas de neve"];
-  if (code >= 95) return ["⛈️", "Tempestade"];
-  return ["🌡️", "—"];
+  if (code === 0) return [isDay ? "sun" : "moon", "Céu limpo"];
+  if (code === 1) return [isDay ? "partly" : "partlyNight", "Predomínio de sol"];
+  if (code === 2) return [isDay ? "partly" : "partlyNight", "Parcialmente nublado"];
+  if (code === 3) return ["cloud", "Nublado"];
+  if (code === 45 || code === 48) return ["fog", "Neblina"];
+  if (code >= 51 && code <= 57) return ["drizzle", "Garoa"];
+  if (code >= 61 && code <= 67) return ["rain", "Chuvoso"];
+  if (code >= 71 && code <= 77) return ["snow", "Neve"];
+  if (code >= 80 && code <= 82) return ["showers", "Pancadas de chuva"];
+  if (code === 85 || code === 86) return ["snow", "Pancadas de neve"];
+  if (code >= 95) return ["storm", "Tempestade"];
+  return ["cloud", "—"];
 }
 const deg = v => `${(Math.round(v * 10) / 10).toString().replace(".", ",")}°`;
 
@@ -120,7 +120,7 @@ function daysHtml(f) {
   return `<div class="wx-days">${d.time.slice(0, 5).map((t, i) => {
     const date = new Date(t + "T12:00");
     const name = i === 0 ? "hoje" : date.toLocaleDateString("pt-BR", { weekday: "short" });
-    return `<div><div class="muted">${name}</div><div class="wx-di">${wx(d.weather_code[i])[0]}</div>
+    return `<div><div class="muted">${name}</div><div class="wx-di" title="${wx(d.weather_code[i])[1]}">${wIcon(wx(d.weather_code[i])[0])}<span class="vh">${wx(d.weather_code[i])[1]}</span></div>
       <div>${deg(d.temperature_2m_max[i])}</div><div class="muted">${deg(d.temperature_2m_min[i])}</div></div>`;
   }).join("")}</div>`;
 }
@@ -138,10 +138,10 @@ function nowcastHtml(n) {
   if (n.error) return `<div class="nc muted">Radar indisponível no momento. <button class="linkbtn" onclick="refresh()">Tentar de novo</button></div>`;
   let head;
   // a imagem do radar tem alguns minutos: chuva a poucos km pode já estar chegando
-  if (n.firstMin === 0 && n.nearKm != null && n.nearKm >= 2) head = `🌧️ <b>Chuva chegando agora</b> — ${intensity(n.firstDbz)[1]}`;
-  else if (n.firstMin === 0) head = `🌧️ <b>Possível chuva agora</b> — ${intensity(n.firstDbz)[1]}`;
-  else if (n.firstMin != null) head = `🌧️ <b>Possível chuva em ~${n.firstMin} min</b> — ${intensity(n.firstDbz)[1]}`;
-  else head = `🌤️ <b>Sem chuva se aproximando</b> na próxima hora`;
+  if (n.firstMin === 0 && n.nearKm != null && n.nearKm >= 2) head = `${wIcon("rain", "w-in")} <b>Chuva chegando agora</b> — ${intensity(n.firstDbz)[1]}`;
+  else if (n.firstMin === 0) head = `${wIcon("rain", "w-in")} <b>Possível chuva agora</b> — ${intensity(n.firstDbz)[1]}`;
+  else if (n.firstMin != null) head = `${wIcon("rain", "w-in")} <b>Possível chuva em ~${n.firstMin} min</b> — ${intensity(n.firstDbz)[1]}`;
+  else head = `${wIcon("partly", "w-in")} <b>Sem chuva se aproximando</b> na próxima hora`;
   const near = n.nearKm == null ? "nenhuma num raio de 120 km"
     : n.nearKm < 2 ? "sobre a cidade" : `<b>${Math.round(n.nearKm)} km</b> ao ${n.nearDir}`;
   return `<div class="nc">
@@ -166,7 +166,7 @@ function renderCards() {
     const [icon, cond] = wx(f.current.weather_code, f.current.is_day);
     const alertHtml = a && a.level
       ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
-      : (a ? `<div class="sub">💨 Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : "");
+      : (a ? `<div class="sub">${uIcon("wind")} Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : "");
     const confHtml = conf ? `<div class="conf ${conf.ok ? "ok" : "warn"}">${conf.txt}${conf.ok ? "" : ` ${infoBtn("conf-" + c.id)}
       <div id="conf-${c.id}" class="muted ${infoCls("conf-" + c.id)}">O radar mostra a chuva que existe agora; o modelo é uma simulação do tempo.
       Para a próxima hora, confie mais no radar.</div>`}</div>` : "";
@@ -176,7 +176,7 @@ function renderCards() {
     card.dataset.id = c.id;
     card.innerHTML = `
       <div class="wx-head">
-        <div class="wx-icon" aria-hidden="true">${icon}</div>
+        <div class="wx-icon">${wIcon(icon)}</div>
         <div class="wx-name"><div class="wx-cond">${cond}</div>
           <h3 class="wx-city"><span class="dot" style="background:${c.color}"></span>${c.name}</h3></div>
         <div class="wx-now"><div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
