@@ -12,15 +12,17 @@ const RIVER_OTHERS = [
   { code: "87385010", name: "Esteio",            where: "perto de Sapucaia",      up: false },
 ];
 const RISE_ALERT_CM = 20; // subida em 6 h rio acima que dispara o aviso
+let riverOpen = !matchMedia("(max-width: 600px)").matches; // no celular a tabela começa fechada
 
 const dmy = d => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 const fmtCm = v => `${v > 0 ? "+" : ""}${Math.round(v)} cm`;
 const fmtM = cm => (cm / 100).toFixed(2).replace(".", ",");
 
-async function fetchStation(code, days) {
+async function fetchStation(code, days, timeoutMs = 20000) {
   const end = new Date(), start = new Date(Date.now() - days * 86400e3);
   const url = `https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos?codEstacao=${code}&dataInicio=${dmy(start)}&dataFim=${dmy(end)}`;
-  const xml = new DOMParser().parseFromString(await (await fetch(url)).text(), "text/xml");
+  // tempo limite: uma estação lenta não pode travar o cartão inteiro
+  const xml = new DOMParser().parseFromString(await (await fetch(url, { signal: AbortSignal.timeout(timeoutMs) })).text(), "text/xml");
   const rows = [...xml.getElementsByTagName("DadosHidrometereologicos")].map(r => ({
     t: new Date(r.getElementsByTagName("DataHora")[0]?.textContent.trim().replace(" ", "T")),
     lvl: parseFloat(r.getElementsByTagName("Nivel")[0]?.textContent),
@@ -45,7 +47,7 @@ function riverStats(rows, stableCm = 3) {
 async function loadRiver() {
   const box = document.getElementById("river");
   const [main, ...others] = await Promise.allSettled([
-    fetchStation(RIVER_STATION, 3), ...RIVER_OTHERS.map(s => fetchStation(s.code, 2)),
+    fetchStation(RIVER_STATION, 3, 30000), ...RIVER_OTHERS.map(s => fetchStation(s.code, 2, 15000)),
   ]);
   if (main.status !== "fulfilled") {
     box.innerHTML = `<h2>🌊 Rio dos Sinos em Campo Bom</h2><div class="muted">Não foi possível buscar os dados da ANA (${main.reason.message}).</div>`;
@@ -96,9 +98,11 @@ function renderRiver(rows, others) {
     <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}"/></svg>
     <div class="muted">Últimos 3 dias · de ${fmtM(min)} m a ${fmtM(max)} m</div>
     ${upAlert}
-    <h3 class="rh3">Ao longo do rio</h3>
-    <div class="rwrap">${table}</div>
-    <div class="muted">Nas outras estações a referência de altura é diferente da de Campo Bom, por isso aparece só a variação.
-      Fonte: <a href="https://www.snirh.gov.br/hidrotelemetria/" target="_blank" rel="noopener">ANA</a> (estação principal ${RIVER_STATION}).
+    <details class="rdet" ${riverOpen ? "open" : ""} ontoggle="riverOpen = this.open">
+      <summary class="rh3">Ao longo do rio</summary>
+      <div class="rwrap">${table}</div>
+      <div class="muted">Nas outras estações a referência de altura é diferente da de Campo Bom, por isso aparece só a variação.</div>
+    </details>
+    <div class="muted">Fonte: <a href="https://www.snirh.gov.br/hidrotelemetria/" target="_blank" rel="noopener">ANA</a> (estação principal ${RIVER_STATION}).
       Em emergência, siga a Defesa Civil.</div>`;
 }

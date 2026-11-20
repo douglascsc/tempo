@@ -144,6 +144,16 @@ footer a { color: inherit; }
   #srcTabs { flex-wrap: nowrap; }
   #srcTabs button { flex: 1; white-space: nowrap; }
   #srcTabs .opt { display: none; }
+  .river-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .river-grid .big { font-size: 1.05rem; }
+  .river-grid .muted { font-size: .72rem; }
   #chart { min-width: 560px; height: 240px; }
 }
 .swipe-hint { display: none; text-align: center; font-size: .78rem; color: var(--muted); margin: -12px 0 14px; }
+
+/* selo com o horário recortado da imagem da Climatempo (região da legenda, escala 0,6) */
+.ct-time { display: inline-block; width: 192px; height: 22px; vertical-align: middle; border-radius: 4px;
+  background-color: #fff; background-repeat: no-repeat; background-size: 1200px 840px; background-position: -768px -715px;
+  border: 1px solid var(--line); }
+.rdet > summary { cursor: pointer; }
+.rdet:not([open]) > summary::after { content: " · toque para abrir"; color: var(--muted); font-weight: 400; font-size: .8rem; }

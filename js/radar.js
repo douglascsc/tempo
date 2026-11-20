@@ -113,7 +113,10 @@ function showFrame(i) {
     const ago = frame === 1 ? "imagem mais recente" : `${(frame - 1) * 5} min antes da mais recente`;
     document.getElementById("frameInfo").textContent = `· ${ago}`;
     t.className = "";
-    t.innerHTML = "🕒 O horário está no canto inferior direito da imagem. Este radar pode chegar com <b>até ~1 h de atraso</b>; para o horário exato, use o RainViewer.";
+    // no celular o zoom esconde o canto da imagem: mostra o horário recortado da própria imagem
+    t.innerHTML = IS_PHONE && frames[frame]
+      ? `🕒 Horário da imagem: <span class="ct-time" style="background-image:url('${frames[frame]}')"></span><br><span class="muted">Pode ter até ~1 h de atraso; para o horário exato, use o RainViewer.</span>`
+      : "🕒 O horário está no canto inferior direito da imagem. Este radar pode chegar com <b>até ~1 h de atraso</b>; para o horário exato, use o RainViewer.";
   } else if (rv.layers.length && frame <= 0) {
     rv.layers.forEach(l => l.setOpacity(0));
     rv.future.forEach((l, k) => l.setOpacity(k === -frame ? 0.75 : 0));
