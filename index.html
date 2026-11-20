@@ -338,7 +338,7 @@ function nowcastHtml(n) {
   return `<div class="nc">
     <div>${head}</div>
     <div class="nc-near">Chuva mais próxima: ${near}</div>
-    <div class="nc-lbl">Próxima hora (tendência):</div>
+    <div class="nc-lbl">Próxima hora (tendência)${radarMotion ? ` <span class="muted">· radar das ${hhmm(radarMotion.time)}</span>` : ""}:</div>
     <div class="nc-blocks">${n.blocks.map((v, i) => {
       const [, lbl, col] = intensity(v);
       return `<div><div class="muted">${i * 15}–${i * 15 + 15} min</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
@@ -673,11 +673,18 @@ async function runNowcast() {
   try {
     const d = await (await fetch("https://api.rainviewer.com/public/weather-maps.json")).json();
     const past = d.radar.past;
-    const newF = past[past.length - 1], oldF = past[Math.max(0, past.length - 3)]; // ~20 min antes
-    const [N, O] = await Promise.all([radarGrid(d.host, newF.path), radarGrid(d.host, oldF.path)]);
-    const dtMin = (newF.time - oldF.time) / 60;
-    const shift = dtMin > 0 ? estimateShift(O.g, N.g, N.W, N.H) : null;
-    const vx = shift ? shift.dx / dtMin : 0, vy = shift ? shift.dy / dtMin : 0; // pixels por minuto
+    // Compara a imagem mais nova com as de 10, 20 e 30 min antes e combina os três deslocamentos:
+    // um par só pode errar bastante a velocidade (ex.: 64 x 90 km/h).
+    const newF = past[past.length - 1];
+    const olds = [2, 3, 4].map(k => past[past.length - k]).filter(Boolean);
+    const [N, ...O] = await Promise.all([newF, ...olds].map(f => radarGrid(d.host, f.path)));
+    let sdx = 0, sdy = 0, sdt = 0;
+    olds.forEach((f, k) => {
+      const s = estimateShift(O[k].g, N.g, N.W, N.H);
+      if (s) { sdx += s.dx; sdy += s.dy; sdt += (newF.time - f.time) / 60; }
+    });
+    const shift = sdt > 0;
+    const vx = shift ? sdx / sdt : 0, vy = shift ? sdy / sdt : 0; // pixels por minuto
     const speed = Math.hypot(vx, vy) * PX_KM * 60;
     const ageMin = Math.max(0, Math.round((Date.now() / 1000 - newF.time) / 60));
     radarMotion = { time: new Date(newF.time * 1000), ageMin, speed,
