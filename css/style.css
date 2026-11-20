@@ -280,4 +280,12 @@ h3.wx-city { font-weight: 400; color: var(--muted); }
   .card.wide, .card.wide-det { grid-template-columns: 1fr; gap: 10px; }
   .card.wide-det .wx-days { padding-top: 10px; border-top: 1px solid var(--line); }
 }
-.card.wide .wx-name .muted { white-space: nowrap; }
+.nw { white-space: nowrap; }
+.card.wide .wx-temp { padding-left: 8px; }
+
+/* seletor com 6 cidades: no celular vira uma grade de 3 x 2 */
+@media (max-width: 600px) {
+  #citySel { overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding: 8px 16px; }
+  #citySel::-webkit-scrollbar { display: none; }
+  #citySel button { flex: 0 0 auto; min-height: 40px; padding: 4px 12px; font-size: .88rem; }
+}

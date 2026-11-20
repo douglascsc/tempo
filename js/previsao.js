@@ -181,7 +181,7 @@ function renderCards() {
     <div class="wx-head">
       <div class="wx-icon">${wIcon(icon)}</div>
       <div class="wx-name"><div class="wx-cond">${cond}</div>
-        <div class="muted">máx ${deg(f.daily.temperature_2m_max[0])} / mín ${deg(f.daily.temperature_2m_min[0])}</div></div>
+        <div class="muted"><span class="nw">máx ${deg(f.daily.temperature_2m_max[0])}</span> / <span class="nw">mín ${deg(f.daily.temperature_2m_min[0])}</span></div></div>
       <div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
     </div>
     ${nowcastHtml(nowcast[c.id], confHtml)}
@@ -201,6 +201,8 @@ function renderCitySel() {
   document.getElementById("citySel").innerHTML = CITIES.map(c =>
     `<button data-id="${c.id}" aria-pressed="${c.id === selected}"><span class="dot" style="background:${c.color}"></span>${c.short || c.name}</button>`).join("");
   document.querySelectorAll("#citySel button").forEach(b => b.onclick = () => selectCity(b.dataset.id));
+  // no celular o seletor desliza: mantém a cidade escolhida visível
+  document.querySelector('#citySel [aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 // No celular, deslizar o dedo sobre o cartão troca para a cidade seguinte/anterior

@@ -25,7 +25,7 @@ function buildMarkers() {
   document.getElementById("markers").innerHTML = CITIES.map(c => {
     const p = cityPos(c);
     return `<div class="marker" style="left:${p.x}%;top:${p.y}%">
-      <div class="pin" style="background:${c.color}"></div><div class="lbl">${c.name}</div></div>`;
+      <div class="pin" style="background:${c.color}"></div>${c.id === "poa" ? "" : `<div class="lbl">${c.name}</div>`}</div>`; // a imagem já escreve "Porto Alegre"
   }).join("");
 }
 

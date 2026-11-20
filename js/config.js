@@ -3,6 +3,9 @@ const CITIES = [
   { id: "cb", name: "Campo Bom",       short: "Campo Bom", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
   { id: "ss", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
   { id: "nt", name: "Nova Tramandaí",  short: "Tramandaí", lat: -29.9925, lon: -50.1380, color: "#00e5ff" },
+  { id: "poa", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },
+  { id: "gr",  name: "Gramado",        short: "Gramado",   lat: -29.3789, lon: -50.8742, color: "#b5651d" },
+  { id: "tq",  name: "Taquara",        short: "Taquara",   lat: -29.6505, lon: -50.7808, color: "#3a86ff" },
 ];
 
 // Área coberta pela imagem do radar (projeção lat/lon simples)
