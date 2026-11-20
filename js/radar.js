@@ -156,8 +156,11 @@ function step(dir) { // dir = +1 avança no tempo
 }
 
 function tick() {
-  // pausa no quadro mais recente e no fim da previsão
-  const delay = frame === minFrame() ? 2000 : frame === 1 && minFrame() < 1 ? 1000 : frame === 1 ? 2000 : 500;
+  // velocidade conforme a quantidade de quadros: poucos quadros andam mais devagar
+  // Climatempo 15 min (4 quadros): 1 s cada · 2 h (24 quadros): 0,4 s · RainViewer: 0,8 s
+  const per = src === "rv" ? 800 : nFrames() <= 4 ? 1000 : 400;
+  const hold = 2500; // pausa no último quadro (mais recente, ou fim da previsão)
+  const delay = frame === minFrame() ? hold : frame === 1 && minFrame() < 1 ? 1200 : per;
   // com a aba em segundo plano a animação não avança (economiza bateria)
   timer = setTimeout(() => { if (playing) { if (!document.hidden) step(1); tick(); } }, delay);
 }

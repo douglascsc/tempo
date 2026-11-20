@@ -129,7 +129,8 @@ function daysHtml(f) {
 // Escala da Defesa Civil para o radar: azul/verde = fraca, amarelo/laranja = moderada,
 // vermelho/rosa = intensa, roxo a preto = muito intensa (limites em dBZ da legenda do radar)
 const INT = [ // dBZ mínimo -> rótulo e cor
-  [60, "muito intensa", "#7b2cbf"], [45, "intensa", "#e5534b"], [30, "moderada", "#f0a020"], [15, "fraca", "#3fb950"],
+  // cores tiradas da própria legenda do radar: verde (fraca), laranja (moderada), vermelho (intensa), roxo (muito intensa)
+  [60, "muito intensa", "#7a1fa2"], [45, "intensa", "#d81b1b"], [30, "moderada", "#ff9800"], [15, "fraca", "#1fa34a"],
 ];
 const intensity = dbz => INT.find(([m]) => dbz >= m) || [0, "sem chuva", "var(--line)"];
 
@@ -141,7 +142,7 @@ function nowcastHtml(n) {
   if (n.firstMin === 0 && n.nearKm != null && n.nearKm >= 2) head = `${wIcon("rain", "w-in")} <b>Chuva chegando agora</b> — ${intensity(n.firstDbz)[1]}`;
   else if (n.firstMin === 0) head = `${wIcon("rain", "w-in")} <b>Possível chuva agora</b> — ${intensity(n.firstDbz)[1]}`;
   else if (n.firstMin != null) head = `${wIcon("rain", "w-in")} <b>Possível chuva em ~${n.firstMin} min</b> — ${intensity(n.firstDbz)[1]}`;
-  else head = `${wIcon("partly", "w-in")} <b>Sem chuva se aproximando</b> na próxima hora`;
+  else head = `${wIcon("partly", "w-in")} <b>Sem sinal de chuva</b> na próxima hora`;
   const near = n.nearKm == null ? "nenhuma num raio de 120 km"
     : n.nearKm < 2 ? "sobre a cidade" : `<b>${Math.round(n.nearKm)} km</b> ao ${n.nearDir}`;
   return `<div class="nc">
@@ -172,13 +173,14 @@ function renderCards() {
       Para a próxima hora, confie mais no radar.</div>`}</div>` : "";
     // cartões: o clique do mouse seleciona a cidade; teclado e leitor de tela usam o seletor de cidades (botões reais)
     const card = document.createElement("article");
-    card.className = "card" + (c.id === selected ? " active" : "");
+    card.className = "card city-top" + (c.id === selected ? " active" : "");
+    card.style.setProperty("--city", c.color); // borda colorida no topo identifica a cidade (mesma cor do seletor)
     card.dataset.id = c.id;
     card.innerHTML = `
       <div class="wx-head">
         <div class="wx-icon">${wIcon(icon)}</div>
         <div class="wx-name"><div class="wx-cond">${cond}</div>
-          <h3 class="wx-city"><span class="dot" style="background:${c.color}"></span>${c.name}</h3></div>
+          <h3 class="vh">${c.name}</h3></div>
         <div class="wx-now"><div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
           <div class="muted">máx ${deg(f.daily.temperature_2m_max[0])} / mín ${deg(f.daily.temperature_2m_min[0])}</div></div>
       </div>

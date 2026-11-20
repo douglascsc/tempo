@@ -263,3 +263,7 @@ h3.wx-city { font-weight: 400; color: var(--muted); }
 .sw3 { background: linear-gradient(90deg, #ff3c00, #c80000, #ff50c8); }
 .sw4 { background: linear-gradient(90deg, #b43cff, #5a0096, #000); }
 .scale-src { font-size: .75rem; margin-top: 4px; }
+
+/* cartão de cima: a cidade é identificada pela borda colorida (mesma cor do seletor) */
+.card.city-top { border-top: 6px solid var(--city); }
+.card.city-top .wx-head { min-height: 56px; }
