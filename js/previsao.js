@@ -217,6 +217,8 @@ function renderCards() {
         <div><span class="nw">mín <b>${deg(f.daily.temperature_2m_min[0])}</b></span></div></div>
     </div>
     ${nowcastHtml(nowcast[c.id])}
+    ${srcLine(`chuva, mini-radar e direção: radar ${SRC.rv}${radarMotion ? ` (imagem às ${hhmm(radarMotion.time)})` : ""}, mm são estimativa ·
+      máx/mín: previsão do tempo ${SRC.om} · mapa ${SRC.osm} · cores: Defesa Civil`)}
   </article>`;
   if (nowcast[c.id] && !nowcast[c.id].error) drawMini(box.querySelector("canvas.mini"), c);
 
@@ -226,6 +228,7 @@ function renderCards() {
       ${alertHtml}
     </div>
     ${daysHtml(f)}
+    ${srcLine(`previsão do tempo ${SRC.om} (alertas de trovoada e rajada e os 5 dias)`)}
   </article>`;
 }
 

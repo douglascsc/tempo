@@ -47,6 +47,7 @@ const UI = {
   pause: `<path d="M8 5v14M16 5v14"/>`,
   prev: `<path d="M18 6v12l-9-6z" class="fill"/><path d="M6 6v12"/>`,
   next: `<path d="M6 6v12l9-6z" class="fill"/><path d="M18 6v12"/>`,
+  info: `<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5h.01"/>`,
   search: `<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>`,
 };
 const uIcon = (name, cls = "u-ic") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${UI[name]}</svg>`;

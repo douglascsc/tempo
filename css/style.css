@@ -346,3 +346,9 @@ canvas.mini { width: 110px; height: 110px; border-radius: 10px; border: 1px soli
 /* horário da Climatempo ao lado do título "Radar" */
 #frameInfo .ct-time { vertical-align: -5px; }
 .radar-head { align-items: center; }
+
+/* rodapé "Fonte:" em cada card */
+.src-line { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: .76rem; color: var(--muted); line-height: 1.45; }
+.src-line a { color: inherit; }
+.src-line .u-ic { width: 13px; height: 13px; }
+.card.wide > .src-line, .card.wide-det > .src-line { grid-column: 1 / -1; margin-top: 0; }

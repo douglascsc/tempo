@@ -41,7 +41,8 @@ function renderNext12() {
       const [, lbl, col] = mmToInt(x.p);
       return `<div title="${fmtMm(x.p)} mm · ${x.prob}%"><div class="muted nc-t">${hh(x.t)}</div><span class="sq" style="background:${col}"></span>
         <div>${lbl}</div><div class="muted n12-p">${x.prob}%</div></div>`;
-    }).join("")}</div>`;
+    }).join("")}</div>
+    ${srcLine(`previsão do tempo ${SRC.om} · chuva prevista em mm convertida para a escala da Defesa Civil · % = chance de chover`)}`;
 }
 
 function renderChart() {

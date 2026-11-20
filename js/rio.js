@@ -103,6 +103,6 @@ function renderRiver(rows, others) {
       <div class="rwrap">${table}</div>
       <div class="muted">Nas outras estações a referência de altura é diferente da de Campo Bom, por isso aparece só a variação.</div>
     </details>
-    <div class="muted">Fonte: <a href="https://www.snirh.gov.br/hidrotelemetria/" target="_blank" rel="noopener">ANA</a> (estação principal ${RIVER_STATION}).
-      Em emergência, siga a Defesa Civil.</div>`;
+    ${srcLine(`nível e chuva medidos pelas estações da <a href="https://www.snirh.gov.br/hidrotelemetria/" target="_blank" rel="noopener">ANA</a> (Campo Bom: ${RIVER_STATION}) ·
+      cota de inundação de 6,80 m informada para Campo Bom · tendência calculada por este site · em emergência, siga a Defesa Civil`)}`;
 }

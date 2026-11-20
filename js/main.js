@@ -41,6 +41,7 @@ document.getElementById("zoomIcon").innerHTML = uIcon("search");
 if (!CITIES.some(c => c.id === selected)) selected = CITIES[0].id;
 renderCitySel();
 updateRiver();
+document.getElementById("chartSrc").innerHTML = `${uIcon("info")} <b>Fonte:</b> previsão do tempo ${SRC.om} · janela seca calculada por este site (sem chuva e chance abaixo de 30%)`;
 if (FROM_LINK) { focusAll = false; } // link de uma cidade: radar centraliza nela
 document.title = `Vai chover em ${CITIES.find(c => c.id === selected).name}?`;
 // clicar num link do seletor (ou mudar o # do endereço) troca a cidade

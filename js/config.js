@@ -50,6 +50,15 @@ async function fetchWithTimeout(url, ms = 20000) {
 }
 
 const hhmm = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+// Rodapé "Fonte:" de cada card
+const SRC = {
+  rv: '<a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>',
+  ct: '<a href="https://www.climatempo.com.br/" target="_blank" rel="noopener">Climatempo</a>',
+  om: '<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>',
+  osm: '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+};
+const srcLine = html => `<div class="src-line">${uIcon("info")} <b>Fonte:</b> ${html}</div>`;
+
 // formato único de horário em toda a página: "às 13:50 (há 6 min)"
 function agoTxt(d) {
   const min = Math.max(0, Math.round((Date.now() - d) / 60000));

@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6feb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z' fill='%231f6feb'/><path d='M12 12v7a2 2 0 0 1-4 0'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=24">
+<link rel="stylesheet" href="css/style.css?v=25">
 </head>
 <body>
 <main>
@@ -59,6 +59,7 @@
       <div><span class="sw sw4"></span><b>Muito intensa</b><small>roxo a preto</small></div>
     </div>
     <div class="muted scale-src">Escala de cores conforme a Defesa Civil.</div>
+    <div id="radarSrc" class="src-line"></div>
   </section>
 
   <!-- 1b. Detalhes por cidade (modelo, alertas, 5 dias) -->
@@ -85,6 +86,7 @@
       <span class="lg-prob">Probabilidade de chuva (%)</span>
       <span class="lg-dry">Melhor janela seca</span>
     </div>
+    <div class="src-line" id="chartSrc"></div>
   </section>
 
   <!-- Rio dos Sinos -->
@@ -134,13 +136,13 @@
   <div class="muted">Chuva da última imagem do radar (RainViewer) · a seta mostra de onde a chuva vem · área de ~100 km</div>
 </dialog>
 
-<script src="js/config.js?v=24"></script>
-<script src="js/icones.js?v=24"></script>
-<script src="js/previsao.js?v=24"></script>
-<script src="js/grafico.js?v=24"></script>
-<script src="js/radar.js?v=24"></script>
-<script src="js/nowcast.js?v=24"></script>
-<script src="js/rio.js?v=24"></script>
-<script src="js/main.js?v=24"></script>
+<script src="js/config.js?v=25"></script>
+<script src="js/icones.js?v=25"></script>
+<script src="js/previsao.js?v=25"></script>
+<script src="js/grafico.js?v=25"></script>
+<script src="js/radar.js?v=25"></script>
+<script src="js/nowcast.js?v=25"></script>
+<script src="js/rio.js?v=25"></script>
+<script src="js/main.js?v=25"></script>
 </body>
 </html>
