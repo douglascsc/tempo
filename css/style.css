@@ -312,3 +312,21 @@ canvas.mini { width: 110px; height: 110px; border-radius: 10px; border: 1px soli
   .nc-blocks.n12 > div:nth-child(n+7) { border-top: 1px solid var(--line); }
 }
 #next12 .skel-blocks { height: 90px; }
+
+/* radar 2 h: 6 blocos; os de 30 min (mais incertos) ficam um pouco mais claros */
+.nc-blocks.nc6 { grid-template-columns: repeat(6, 1fr); }
+.nc-blocks .far { opacity: .8; background: color-mix(in srgb, var(--line) 25%, transparent); }
+.sq-out { background: repeating-linear-gradient(45deg, var(--line) 0 3px, transparent 3px 6px); border: 1px solid var(--line); }
+.nc-blocks .out .muted { font-size: .7rem; }
+
+/* mini-radar clicável e janela ampliada */
+.mini-btn { position: relative; padding: 0; border: none; background: none; cursor: zoom-in; flex: none; border-radius: 10px; }
+.mini-zoom { position: absolute; right: 4px; top: 4px; width: 22px; height: 22px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; background: rgba(255,255,255,.9); color: #111; }
+.mini-zoom .u-ic { width: 14px; height: 14px; }
+#miniDlg { border: none; border-radius: 14px; padding: 14px; width: min(560px, calc(100vw - 32px)); background: var(--card); color: var(--text); }
+#miniDlg::backdrop { background: rgba(0,0,0,.55); }
+#miniDlg canvas { width: 100%; height: auto; display: block; border-radius: 10px; margin: 8px 0; }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.dlg-head h3 { margin: 0; font-size: 1rem; }
+.dlg-head button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-size: 1.1rem; cursor: pointer; }

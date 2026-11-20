@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6feb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z' fill='%231f6feb'/><path d='M12 12v7a2 2 0 0 1-4 0'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
 <main>
@@ -64,7 +64,7 @@
   </section>
 
   <!-- 1b. Detalhes por cidade (modelo, alertas, 5 dias) -->
-  <section id="details" class="cardgrid" aria-label="Previsão do modelo, alertas e 5 dias">
+  <section id="details" class="cardgrid" aria-label="Previsão do tempo, alertas e 5 dias">
     <div class="card skel skel-sm"></div>
   </section>
 
@@ -100,13 +100,19 @@
   </footer>
 </main>
 
-<script src="js/config.js?v=16"></script>
-<script src="js/icones.js?v=16"></script>
-<script src="js/previsao.js?v=16"></script>
-<script src="js/grafico.js?v=16"></script>
-<script src="js/radar.js?v=16"></script>
-<script src="js/nowcast.js?v=16"></script>
-<script src="js/rio.js?v=16"></script>
-<script src="js/main.js?v=16"></script>
+<dialog id="miniDlg" onclick="if (event.target === this) this.close()">
+  <div class="dlg-head"><h3></h3><button onclick="this.closest('dialog').close()" aria-label="Fechar">✕</button></div>
+  <canvas width="768" height="768" role="img" aria-label="Radar ampliado em volta da cidade"></canvas>
+  <div class="muted">Chuva da última imagem do radar (RainViewer) · a seta mostra de onde a chuva vem · área de ~100 km</div>
+</dialog>
+
+<script src="js/config.js?v=19"></script>
+<script src="js/icones.js?v=19"></script>
+<script src="js/previsao.js?v=19"></script>
+<script src="js/grafico.js?v=19"></script>
+<script src="js/radar.js?v=19"></script>
+<script src="js/nowcast.js?v=19"></script>
+<script src="js/rio.js?v=19"></script>
+<script src="js/main.js?v=19"></script>
 </body>
 </html>

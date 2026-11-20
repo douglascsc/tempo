@@ -134,6 +134,9 @@ const INT = [ // dBZ mínimo -> rótulo e cor
 ];
 const intensity = dbz => INT.find(([m]) => dbz >= m) || [0, "sem chuva", "var(--line)"];
 
+const NC_LABELS = ["0–30", "30–60", "60–90", "90–120"];
+const durTxt = m => m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? " " + String(m % 60).padStart(2, "0") : ""}`;
+
 // Resposta do radar em duas partes: texto (o que vem aí) e linha do tempo (4 blocos de 15 min)
 function nowcastHtml(n) {
   if (!n) return `<div class="nc-text"><div class="skel-line"></div><div class="skel-line short"></div><div class="skel-line short"></div></div>
@@ -143,13 +146,13 @@ function nowcastHtml(n) {
   // a imagem do radar tem alguns minutos: chuva a poucos km pode já estar chegando
   if (n.firstMin === 0 && n.nearKm != null && n.nearKm >= 2) head = `${wIcon("rain", "w-in")} <b>Chuva chegando agora</b> — ${intensity(n.firstDbz)[1]}`;
   else if (n.firstMin === 0) head = `${wIcon("rain", "w-in")} <b>Possível chuva agora</b> — ${intensity(n.firstDbz)[1]}`;
-  else if (n.firstMin != null) head = `${wIcon("rain", "w-in")} <b>Possível chuva em ~${n.firstMin} min</b> — ${intensity(n.firstDbz)[1]}`;
-  else head = `${wIcon("partly", "w-in")} <b>Sem sinal de chuva</b> na próxima hora`;
+  else if (n.firstMin != null) head = `${wIcon("rain", "w-in")} <b>Possível chuva em ~${durTxt(n.firstMin)}</b> — ${intensity(n.firstDbz)[1]}`;
+  else head = `${wIcon("partly", "w-in")} <b>Sem sinal de chuva</b> nas próximas 2 h`;
 
   // 1) até quando · 2) quantos mm · 3) se fortalecendo ou enfraquecendo
   const sub = [];
   if (n.firstMin != null) {
-    sub.push(n.endMin != null ? `até ~${hhmm(new Date(Date.now() + n.endMin * 60e3))}` : "por mais de 1 h");
+    sub.push(n.endMin != null ? `até ~${hhmm(new Date(Date.now() + n.endMin * 60e3))}` : "por mais de 2 h");
     if (n.mm >= 0.1) sub.push(`~${fmtMm(n.mm)} mm na próxima hora`);
   }
   if (n.trend === "up") sub.push(`${uIcon("up")} se intensificando`);
@@ -182,10 +185,12 @@ function nowcastHtml(n) {
       ${cellHtml}
     </div>
     <div class="nc-tl">
-      <div class="nc-lbl">Próxima hora em min (tendência)${radarMotion ? ` <span class="muted">· radar às ${hhmm(radarMotion.time)}</span>` : ""}</div>
+      <div class="nc-lbl">Próximas 2 h em min (tendência)${radarMotion ? ` <span class="muted">· radar às ${hhmm(radarMotion.time)}</span>` : ""}</div>
       <div class="nc-blocks">${n.blocks.map((v, i) => {
+        const t = NC_LABELS[i];
+        if (v == null) return `<div class="far out"><div class="muted nc-t">${t}</div><span class="sq sq-out"></span><div class="muted">fora do alcance</div></div>`;
         const [, lbl, col] = intensity(v);
-        return `<div><div class="muted nc-t">${i * 15}–${i * 15 + 15}</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
+        return `<div${i >= 2 ? ' class="far"' : ""}><div class="muted nc-t">${t}</div><span class="sq" style="background:${col}"></span><div>${lbl}</div></div>`;
       }).join("")}</div>
     </div>`;
 }
@@ -204,7 +209,8 @@ function renderCards() {
   box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
     <h3 class="vh">${c.name}</h3>
     <div class="wx-head">
-      <canvas class="mini" width="256" height="256" role="img" aria-label="Mini-radar em volta de ${c.name}"></canvas>
+      <button class="mini-btn" onclick="openMini()" aria-label="Ampliar o mini-radar de ${c.name}" title="Toque para ampliar">
+        <canvas class="mini" width="256" height="256" aria-hidden="true"></canvas><span class="mini-zoom">${uIcon("search")}</span></button>
       <div class="wx-mm"><div class="muted">hoje</div>
         <div><span class="nw">máx <b>${deg(f.daily.temperature_2m_max[0])}</b></span></div>
         <div><span class="nw">mín <b>${deg(f.daily.temperature_2m_min[0])}</b></span></div></div>

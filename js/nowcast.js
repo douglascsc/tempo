@@ -120,23 +120,28 @@ async function runNowcast(attempt = 1) {
       const cx = lonToX(c.lon) - N.ox, cy = latToY(c.lat) - N.oy;
       const up = k => [cx - vx * k, cy - vy * k]; // onde está hoje a chuva que chega daqui k min
 
-      // 1) próxima hora minuto a minuto: blocos, início, fim e mm
+      // 1) próximas 2 h minuto a minuto: 4 blocos de 30 min, início, fim e mm
+      // bloco = null quando a chuva que chegaria ainda está fora da área que o radar enxerga
       const blocks = [0, 0, 0, 0], v = [];
+      const blockOf = t => Math.floor(t / 30);
+      const inside = (x, y) => x >= 3 && y >= 3 && x < N.W - 3 && y < N.H - 3;
       let firstMin = null, firstDbz = 0, mm = 0;
-      for (let t = 0; t < 90; t++) {
+      for (let t = 0; t < 125; t++) {
         const [x, y] = up(t + ageMin);
-        v[t] = sampleGrid(N, x, y, 2, "max");
-        if (t < 60) {
-          blocks[Math.floor(t / 15)] = Math.max(blocks[Math.floor(t / 15)], v[t]);
-          mm += dbzToMmH(sampleGrid(N, x, y, 1, "mean")) / 60;
-          if (v[t] >= 15 && firstMin == null) firstMin = t;
-          if (firstMin != null && t < firstMin + 15) firstDbz = Math.max(firstDbz, v[t]);
-        }
+        v[t] = inside(x, y) ? sampleGrid(N, x, y, 2, "max") : null;
+        if (t >= 120) continue;
+        const b = blockOf(t);
+        if (v[t] == null) { blocks[b] = null; continue; }
+        if (blocks[b] != null) blocks[b] = Math.max(blocks[b], v[t]);
+        if (t < 60) mm += dbzToMmH(sampleGrid(N, x, y, 1, "mean")) / 60;
+        if (v[t] >= 15 && firstMin == null) firstMin = t;
+        if (firstMin != null && t < firstMin + 15) firstDbz = Math.max(firstDbz, v[t]);
       }
       // fim: primeiro momento após o início com 5 min seguidos sem chuva
       let endMin = null;
-      if (firstMin != null) for (let t = firstMin + 1; t < 86; t++) {
-        if (v.slice(t, t + 5).every(x => x < 15)) { endMin = t; break; }
+      if (firstMin != null) for (let t = firstMin + 1; t < 120; t++) {
+        const w = v.slice(t, t + 5);
+        if (w.every(x => x != null && x < 15)) { endMin = t; break; }
       }
 
       // 3) fortalecendo ou enfraquecendo: a chuva que chega em ~15 min, agora x 20 min atrás
@@ -207,35 +212,46 @@ function osmTile(z, x, y) {
   return osmCache.get(k);
 }
 
-async function drawMini(cv, c) {
+// span = largura do recorte em pixels do mapa no zoom 8 (128 ≈ 68 km; 192 ≈ 100 km)
+async function drawMini(cv, c, span = 128) {
   if (!cv || !radarLatest) return;
-  const ctx = cv.getContext("2d"), S = cv.width;          // canvas 256 px = 128 px do mapa no zoom 8 (~68 km)
-  const cx8 = lonToX(c.lon) * 2, cy8 = latToY(c.lat) * 2, x0 = cx8 - 64, y0 = cy8 - 64, sc = S / 128;
+  const ctx = cv.getContext("2d"), S = cv.width, h = span / 2;
+  const cx8 = lonToX(c.lon) * 2, cy8 = latToY(c.lat) * 2, x0 = cx8 - h, y0 = cy8 - h, sc = S / span;
   const tiles = [];
-  for (let tx = Math.floor(x0 / 256); tx <= Math.floor((x0 + 128) / 256); tx++)
-    for (let ty = Math.floor(y0 / 256); ty <= Math.floor((y0 + 128) / 256); ty++)
+  for (let tx = Math.floor(x0 / 256); tx <= Math.floor((x0 + span) / 256); tx++)
+    for (let ty = Math.floor(y0 / 256); ty <= Math.floor((y0 + span) / 256); ty++)
       tiles.push(osmTile(8, tx, ty).then(img => img && ctx.drawImage(img, (tx * 256 - x0) * sc, (ty * 256 - y0) * sc, 256 * sc, 256 * sc)));
   ctx.fillStyle = "#e8eef3"; ctx.fillRect(0, 0, S, S);
   await Promise.all(tiles);
   // chuva (zoom 7) por cima do mapa
-  const r = radarLatest, sx = lonToX(c.lon) - r.ox - 32, sy = latToY(c.lat) - r.oy - 32;
+  const r = radarLatest, sx = lonToX(c.lon) - r.ox - h / 2, sy = latToY(c.lat) - r.oy - h / 2;
   ctx.globalAlpha = 0.8; ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(r.cv, sx, sy, 64, 64, 0, 0, S, S);
+  ctx.drawImage(r.cv, sx, sy, h, h, 0, 0, S, S);
   ctx.globalAlpha = 1;
   // seta: de onde vem a chuva até a cidade
   if (radarVec) {
     const L = Math.hypot(radarVec.vx, radarVec.vy), ux = radarVec.vx / L, uy = radarVec.vy / L;
-    const ex = S / 2 - ux * 16, ey = S / 2 - uy * 16, bx = S / 2 - ux * 96, by = S / 2 - uy * 96;
-    ctx.strokeStyle = "#111"; ctx.fillStyle = "#111"; ctx.lineWidth = 5; ctx.setLineDash([10, 8]);
+    const k = S / 256; // traços proporcionais ao tamanho do canvas
+    const ex = S / 2 - ux * 16 * k, ey = S / 2 - uy * 16 * k, bx = S / 2 - ux * 96 * k, by = S / 2 - uy * 96 * k;
+    ctx.strokeStyle = "#111"; ctx.fillStyle = "#111"; ctx.lineWidth = 5 * k; ctx.setLineDash([10 * k, 8 * k]);
     ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
-    ctx.beginPath(); ctx.moveTo(ex + ux * 6, ey + uy * 6);
-    ctx.lineTo(ex - ux * 14 - uy * 10, ey - uy * 14 + ux * 10); ctx.lineTo(ex - ux * 14 + uy * 10, ey - uy * 14 - ux * 10);
+    ctx.beginPath(); ctx.moveTo(ex + ux * 6 * k, ey + uy * 6 * k);
+    ctx.lineTo(ex - (ux * 14 + uy * 10) * k, ey - (uy * 14 - ux * 10) * k); ctx.lineTo(ex - (ux * 14 - uy * 10) * k, ey - (uy * 14 + ux * 10) * k);
     ctx.closePath(); ctx.fill();
   }
   // cidade
-  ctx.beginPath(); ctx.arc(S / 2, S / 2, 10, 0, 7); ctx.fillStyle = c.color; ctx.fill();
-  ctx.lineWidth = 4; ctx.strokeStyle = "#fff"; ctx.stroke();
-  ctx.font = "16px system-ui, sans-serif"; ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillText("© OSM", S - 58, S - 8);
+  const k2 = S / 256;
+  ctx.beginPath(); ctx.arc(S / 2, S / 2, 10 * k2, 0, 7); ctx.fillStyle = c.color; ctx.fill();
+  ctx.lineWidth = 4 * k2; ctx.strokeStyle = "#fff"; ctx.stroke();
+  ctx.font = `${16 * k2}px system-ui, sans-serif`; ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.textAlign = "right"; ctx.fillText("© OpenStreetMap", S - 8 * k2, S - 8 * k2); ctx.textAlign = "left";
+}
+
+// Mini-radar ampliado numa janela (abre ao tocar no mini-radar do cartão)
+function openMini() {
+  const c = CITIES.find(x => x.id === selected), dlg = document.getElementById("miniDlg");
+  dlg.querySelector("h3").textContent = `Radar em volta de ${c.name}` + (radarMotion ? ` · imagem às ${hhmm(radarMotion.time)}` : "");
+  dlg.showModal();
+  drawMini(dlg.querySelector("canvas"), c, 192);
 }
 
 function renderRadarMotion() {
