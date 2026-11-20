@@ -10,12 +10,12 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6feb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z' fill='%231f6feb'/><path d='M12 12v7a2 2 0 0 1-4 0'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=19">
+<link rel="stylesheet" href="css/style.css?v=20">
 </head>
 <body>
 <main>
   <header>
-    <h1><span id="h1Icon"></span>Vai chover?</h1>
+    <h1><span id="h1Icon"></span>Vai chover? <button class="help-btn" onclick="document.getElementById('helpDlg').showModal()" aria-label="Como ler este painel" title="Como ler este painel">i</button></h1>
     <span class="muted" id="updated">Carregando…</span>
   </header>
 
@@ -100,19 +100,49 @@
   </footer>
 </main>
 
+<dialog id="helpDlg" class="dlg" onclick="if (event.target === this) this.close()">
+  <div class="dlg-head"><h3>Como ler este painel</h3><button onclick="this.closest('dialog').close()" aria-label="Fechar">✕</button></div>
+  <div class="help">
+    <p><b>Duas fontes de chuva, cada uma para um momento:</b></p>
+    <table>
+      <tr><th></th><th>Radar</th><th>Previsão do tempo</th></tr>
+      <tr><td>O que é</td><td>Foto da chuva que <b>existe agora</b>, tirada por radares meteorológicos</td><td>Simulação feita por computador de como o tempo deve ficar</td></tr>
+      <tr><td>Melhor para</td><td><b>Próximas 2 h</b>: “vai chover quando eu sair?”</td><td><b>Depois de 2 h</b>: hoje à noite, amanhã, próximos dias</td></tr>
+      <tr><td>Ponto fraco</td><td>Não prevê chuva que ainda não se formou; a imagem tem alguns minutos de atraso</td><td>Pode errar o horário e o lugar exato de pancadas</td></tr>
+      <tr><td>Atualiza</td><td>A cada 5–10 min</td><td>Cerca de 1 vez por hora</td></tr>
+    </table>
+    <p><b>De onde vem cada parte da página</b></p>
+    <ul>
+      <li><b>Cartão de cima</b> (chuva nas próximas 2 h, quando começa e termina, mm, se intensificando, chuva mais próxima, célula forte, chuva nas últimas 2 h e mini-radar): <b>radar RainViewer</b>. Os mm são estimativa.</li>
+      <li><b>Máx/mín de hoje</b>: previsão do tempo.</li>
+      <li><b>Radar animado</b>: Climatempo (radar de Porto Alegre, mais detalhado, pode atrasar) ou RainViewer (com horário exato e previsão desenhada de até 1 h).</li>
+      <li><b>Depois das próximas 2 h</b>, <b>gráfico de 48 h</b>, <b>janela seca</b>, <b>5 dias</b> e <b>alertas de trovoada e rajada</b>: previsão do tempo (Open-Meteo).</li>
+      <li><b>Rio dos Sinos</b>: estações da ANA (nível medido a cada 5–15 min). Cota de inundação em Campo Bom: 6,80 m.</li>
+      <li><b>Cores e nomes da chuva</b> (fraca, moderada, intensa, muito intensa): escala da Defesa Civil.</li>
+    </ul>
+    <p><b>Na prática</b></p>
+    <ul>
+      <li>Vai sair agora ou na próxima hora? Olhe o <b>cartão de cima</b> e o radar.</li>
+      <li>Vai chover de noite ou amanhã? Olhe <b>as horas seguintes</b>, o gráfico e os 5 dias.</li>
+      <li>Aviso de célula forte ou de temporal: fique atento ao radar. Em emergência, siga a <b>Defesa Civil (199)</b>.</li>
+    </ul>
+    <p class="muted">A página busca dados novos sozinha a cada 5 minutos enquanto está aberta.</p>
+  </div>
+</dialog>
+
 <dialog id="miniDlg" onclick="if (event.target === this) this.close()">
   <div class="dlg-head"><h3></h3><button onclick="this.closest('dialog').close()" aria-label="Fechar">✕</button></div>
   <canvas width="768" height="768" role="img" aria-label="Radar ampliado em volta da cidade"></canvas>
   <div class="muted">Chuva da última imagem do radar (RainViewer) · a seta mostra de onde a chuva vem · área de ~100 km</div>
 </dialog>
 
-<script src="js/config.js?v=19"></script>
-<script src="js/icones.js?v=19"></script>
-<script src="js/previsao.js?v=19"></script>
-<script src="js/grafico.js?v=19"></script>
-<script src="js/radar.js?v=19"></script>
-<script src="js/nowcast.js?v=19"></script>
-<script src="js/rio.js?v=19"></script>
-<script src="js/main.js?v=19"></script>
+<script src="js/config.js?v=20"></script>
+<script src="js/icones.js?v=20"></script>
+<script src="js/previsao.js?v=20"></script>
+<script src="js/grafico.js?v=20"></script>
+<script src="js/radar.js?v=20"></script>
+<script src="js/nowcast.js?v=20"></script>
+<script src="js/rio.js?v=20"></script>
+<script src="js/main.js?v=20"></script>
 </body>
 </html>
