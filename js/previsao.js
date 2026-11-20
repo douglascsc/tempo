@@ -168,7 +168,6 @@ function renderCards() {
   if (!f) return;
   const a = stormAlert(f);
   const conf = confidence(nowcast[c.id], f);
-  const [icon, cond] = wx(f.current.weather_code, f.current.is_day);
   const alertHtml = a && a.level
     ? `<div class="alert lv${a.level}">${a.level === 2 ? "<b>Risco de temporal</b><br>" : ""}${a.items.join("<br>")}</div>`
     : (a ? `<div class="sub">${uIcon("wind")} Rajadas até ${a.maxGust} km/h nas próximas 12 h</div>` : `<div class="sub">Sem alertas nas próximas 12 h</div>`);
@@ -179,10 +178,9 @@ function renderCards() {
   box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
     <h3 class="vh">${c.name}</h3>
     <div class="wx-head">
-      <div class="wx-icon">${wIcon(icon)}</div>
-      <div class="wx-name"><div class="wx-cond">${cond}</div>
-        <div class="muted"><span class="nw">máx ${deg(f.daily.temperature_2m_max[0])}</span> / <span class="nw">mín ${deg(f.daily.temperature_2m_min[0])}</span></div></div>
       <div class="wx-temp">${deg(f.current.temperature_2m)}C</div>
+      <div class="wx-name"><div class="muted">agora</div>
+        <div class="muted"><span class="nw">máx ${deg(f.daily.temperature_2m_max[0])}</span> / <span class="nw">mín ${deg(f.daily.temperature_2m_min[0])}</span></div></div>
     </div>
     ${nowcastHtml(nowcast[c.id], confHtml)}
   </article>`;
