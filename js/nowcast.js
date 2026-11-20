@@ -8,7 +8,7 @@ const NC_BOX = { west: -52.6, east: -48.8, north: -28.4, south: -31.3 }; // áre
 const lonToX = lon => (lon + 180) / 360 * WORLD;
 const latToY = lat => { const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * WORLD; };
 const PX_KM = 40075 * Math.cos(29.8 * Math.PI / 180) / WORLD; // ~1,06 km por pixel
-const DIRS = ["N", "NE", "L", "SE", "S", "SO", "O", "NO"];
+const DIRS = ["norte", "nordeste", "leste", "sudeste", "sul", "sudoeste", "oeste", "noroeste"];
 const dirName = bearing => DIRS[Math.round((((bearing % 360) + 360) % 360) / 45) % 8];
 let nowcast = {}, radarMotion = null;
 
