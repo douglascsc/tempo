@@ -129,7 +129,8 @@ function showFrame(i) {
     document.getElementById("frameInfo").innerHTML = frames[frame]
       ? `<span class="ct-time" style="background-image:url('${frames[frame]}')" role="img" aria-label="Horário da imagem do radar"></span>` : "";
     t.className = "";
-    t.innerHTML = `${uIcon("clock")} Horário da imagem ao lado do título. ${infoBtn("ctNote")}<span id="ctNote" class="muted ${infoCls("ctNote")}"> Este radar pode chegar com até ~1 h de atraso; para o horário exato, use o RainViewer.</span>`;
+    // aviso só aparece ao tocar no ⓘ (em qualquer tela)
+    t.innerHTML = `${infoBtn("ctNote").replace('class="ibtn"', 'class="ibtn always"')}<span id="ctNote" class="muted all-info${openInfo.has("ctNote") ? " show" : ""}">${uIcon("clock")} Horário da imagem ao lado do título. Este radar pode chegar com até ~1 h de atraso; para o horário exato, use o RainViewer.</span>`;
   } else if (rv.layers.length && frame <= 0) {
     rv.layers.forEach(l => l.setOpacity(0));
     rv.future.forEach((l, k) => l.setOpacity(k === -frame ? 0.75 : 0));

@@ -178,7 +178,7 @@ function nowcastHtml(n) {
   }
 
   return `<div class="nc-text">
-      <div class="nc-head">${head} <span class="src">· radar</span></div>
+      <div class="nc-head">${head}</div>
       ${sub.length ? `<div class="nc-sub">${sub.join(" · ")}</div>` : ""}
       <div class="nc-near">Chuva mais próxima: ${near}${spread ? ` · ${spread}` : ""}</div>
       ${radarMotion?.from ? `<div class="nc-move">${uIcon("compass")} As chuvas da região vêm do <b>${radarMotion.from}</b> e andam ~${Math.round(radarMotion.speed)} km/h</div>` : ""}

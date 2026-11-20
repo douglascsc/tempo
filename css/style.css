@@ -152,11 +152,15 @@ footer a { color: inherit; }
 .rdet > summary { cursor: pointer; }
 .rdet:not([open]) > summary::after { content: " · toque para abrir"; color: var(--muted); font-weight: 400; font-size: .8rem; }
 .nc-t { white-space: nowrap; }
-.ibtn { display: none; }
+.ibtn { display: none; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0;
+  border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--muted);
+  font-size: 14px; line-height: 1; cursor: pointer; vertical-align: middle; }
+/* "ⓘ" que esconde o texto em qualquer tela (não só no celular) */
+.ibtn.always { display: inline-flex; }
+.all-info { display: none; }
+.all-info.show { display: block; margin-top: 4px; }
 @media (max-width: 600px) {
-  .ibtn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0;
-    border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--muted);
-    font-size: 14px; line-height: 1; cursor: pointer; vertical-align: middle; }
+  .ibtn { display: inline-flex; }
   .phone-info { display: none; }
   .phone-info.show { display: block; margin-top: 4px; }
 }
