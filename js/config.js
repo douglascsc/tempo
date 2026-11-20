@@ -2,7 +2,7 @@
 const CITIES = [
   { id: "cb", slug: "campo-bom", name: "Campo Bom",       short: "Campo Bom", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
   { id: "ss", slug: "sapucaia", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
-  { id: "nt", slug: "tramandai", name: "Nova Tramandaí",  short: "Tramandaí", lat: -29.9925, lon: -50.1380, color: "#00e5ff" },
+  { id: "nt", slug: "nova-tramandai", alias: "tramandai", name: "Nova Tramandaí", short: "Nova Tramandaí", lat: -30.0370, lon: -50.1611, color: "#00e5ff" },
   { id: "poa", slug: "porto-alegre", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },
   { id: "gr", slug: "gramado",  name: "Gramado",        short: "Gramado",   lat: -29.3789, lon: -50.8742, color: "#b5651d" },
   { id: "tq", slug: "taquara",  name: "Taquara",        short: "Taquara",   lat: -29.6505, lon: -50.7808, color: "#3a86ff" },
@@ -22,7 +22,7 @@ let forecasts = {};    // id -> dados da Open-Meteo
 // Sem link, abre a última cidade vista neste aparelho.
 function cityFromUrl() {
   const key = (location.hash.slice(1) || new URLSearchParams(location.search).get("cidade") || "").toLowerCase();
-  return CITIES.find(c => c.slug === key || c.id === key)?.id || null;
+  return CITIES.find(c => c.slug === key || c.alias === key || c.id === key)?.id || null; // alias: links antigos continuam valendo
 }
 const FROM_LINK = cityFromUrl();
 let selected = FROM_LINK || localStorageGet("cidade") || "cb";
