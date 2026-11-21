@@ -1,14 +1,14 @@
 // ===================== Configuração =====================
 const CITIES = [
-  { id: "cb", slug: "campo-bom", name: "Campo Bom",       short: "Campo Bom", lbl: "left", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
-  { id: "sp", slug: "sapiranga", name: "Sapiranga",       short: "Sapiranga", lbl: "top", lat: -29.6383, lon: -51.0069, color: "#577590" },
-  { id: "ss", slug: "sapucaia", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
-  { id: "nt", slug: "nova-tramandai", alias: "tramandai", name: "Nova Tramandaí", short: "Nova Tramandaí", lat: -30.0370, lon: -50.1611, color: "#00e5ff" },
-  { id: "poa", slug: "porto-alegre", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },
-  { id: "gr", slug: "gramado",  name: "Gramado",        short: "Gramado",   lat: -29.3789, lon: -50.8742, color: "#b5651d" },
-  { id: "tq", slug: "taquara",  name: "Taquara",        short: "Taquara",   lat: -29.6505, lon: -50.7808, color: "#3a86ff" },
-  { id: "fi", slug: "fialho",  name: "Fialho (Taquara)", short: "Fialho",  lat: -29.7467, lon: -50.8966, color: "#2b9348" },
-  { id: "gv", slug: "gravatai",  name: "Gravataí",       short: "Gravataí",  lat: -29.9440, lon: -50.9919, color: "#ef476f" },
+  { id: "cb", ibge: 4303905, slug: "campo-bom", name: "Campo Bom",       short: "Campo Bom", lbl: "left", lat: -29.6789, lon: -51.0528, color: "#ff9f1c" },
+  { id: "sp", ibge: 4319901, slug: "sapiranga", name: "Sapiranga",       short: "Sapiranga", lbl: "top", lat: -29.6383, lon: -51.0069, color: "#577590" },
+  { id: "ss", ibge: 4320008, slug: "sapucaia", name: "Sapucaia do Sul", short: "Sapucaia",  lat: -29.8276, lon: -51.1450, color: "#e040fb" },
+  { id: "nt", ibge: 4321600, slug: "nova-tramandai", alias: "tramandai", name: "Nova Tramandaí", short: "Nova Tramandaí", lat: -30.0370, lon: -50.1611, color: "#00e5ff" },
+  { id: "poa", ibge: 4314902, slug: "porto-alegre", name: "Porto Alegre",   short: "Porto Alegre", lat: -30.0346, lon: -51.2177, color: "#8ac926" },
+  { id: "gr", ibge: 4309100, slug: "gramado",  name: "Gramado",        short: "Gramado",   lat: -29.3789, lon: -50.8742, color: "#b5651d" },
+  { id: "tq", ibge: 4321204, slug: "taquara",  name: "Taquara",        short: "Taquara",   lat: -29.6505, lon: -50.7808, color: "#3a86ff" },
+  { id: "fi", ibge: 4321204, slug: "fialho",  name: "Fialho (Taquara)", short: "Fialho",  lat: -29.7467, lon: -50.8966, color: "#2b9348" },
+  { id: "gv", ibge: 4309209, slug: "gravatai",  name: "Gravataí",       short: "Gravataí",  lat: -29.9440, lon: -50.9919, color: "#ef476f" },
 ];
 
 // Área coberta pela imagem do radar (projeção lat/lon simples)
@@ -57,7 +57,11 @@ const SRC = {
   ct: '<a href="https://www.climatempo.com.br/" target="_blank" rel="noopener">Climatempo</a>',
   om: '<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>',
   osm: '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+  inmet: '<a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">INMET</a>',
 };
+// dados mais velhos que isso ganham o selo "atrasado"
+const RADAR_STALE_MIN = 30;  // radar RainViewer (imagens novas a cada 10 min)
+const RIVER_STALE_H = 3;     // ANA (Campo Bom costuma chegar com 1–2 h de atraso)
 const srcLine = html => `<div class="src-line">${uIcon("info")} <b>Fonte:</b> ${html}</div>`;
 
 // formato único de horário em toda a página: "às 13:50 (há 6 min)"

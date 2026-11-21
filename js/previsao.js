@@ -177,7 +177,11 @@ function nowcastHtml(n) {
     cellHtml = `<div class="alert ${hail || k.eta != null ? "lv2" : "lv1"}">${uIcon("alert")} <b>${what}</b> ${where}${when}${hail ? " · possível granizo" : ""}</div>`;
   }
 
+  // 10) imagem do radar velha: avisa com destaque (o texto abaixo vale para aquele horário)
+  const stale = radarMotion && Date.now() - radarMotion.time > RADAR_STALE_MIN * 60e3
+    ? `<div class="stale-badge">${uIcon("alert")} Radar atrasado: última imagem ${atAgo(radarMotion.time)}</div>` : "";
   return `<div class="nc-text">
+      ${stale}
       <div class="nc-head">${head}</div>
       ${sub.length ? `<div class="nc-sub">${sub.join(" · ")}</div>` : ""}
       <div class="nc-near">Chuva mais próxima: ${near}${spread ? ` · ${spread}` : ""}</div>
@@ -209,6 +213,7 @@ function renderCards() {
   // do modelo fica só máx/mín do dia; o resto do cartão vem do radar
   box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
     <h3 class="vh">${c.name}</h3>
+    ${inmet !== null ? `<div class="inmet-box">${inmetHtml(c)}</div>` : ""}
     <div class="wx-head">
       <div class="mini-col">
         <button class="mini-btn" onclick="openMini()" aria-label="Ampliar o mini-radar de ${c.name}" title="Toque para ampliar">
@@ -224,7 +229,7 @@ function renderCards() {
     ${nowcastHtml(nowcast[c.id])}
     ${srcLine(`mini-radar: radar de Porto Alegre, imagem da ${SRC.ct} (horário embaixo dele) ·
       chuva nas próximas 2 h, distâncias, mm e direção: radar ${SRC.rv}${radarMotion ? ` (imagem às ${hhmm(radarMotion.time)})` : ""}, mm são estimativa ·
-      máx/mín: previsão do tempo ${SRC.om} · cores: Defesa Civil`)}
+      máx/mín: previsão do tempo ${SRC.om} · cores: Defesa Civil · avisos: ${SRC.inmet}`)}
   </article>`;
   ctCrop(box.querySelector(".ct-mini"), c);
 
@@ -239,10 +244,20 @@ function renderCards() {
 }
 
 // ----- Seletor de cidade: controla os cartões, o gráfico e o radar -----
+// Pílula no botão da cidade: cor da intensidade e em quanto tempo a chuva chega (radar, próximas 2 h)
+function selRain(c) {
+  const n = nowcast[c.id];
+  if (!n || n.error || n.firstMin == null) return "";
+  const [, lbl, col] = intensity(n.firstDbz);
+  const when = n.firstMin === 0 ? "agora" : `${n.firstMin}′`;
+  const txt = n.firstMin === 0 ? `possível chuva ${lbl} agora` : `possível chuva ${lbl} em ~${n.firstMin} min`;
+  return ` <span class="sel-rain" style="background:${col}" title="${txt}" aria-label="${txt}">${when}</span>`;
+}
+
 function renderCitySel() {
   // cada cidade é um link de verdade (#campo-bom, #gramado...): dá para copiar e compartilhar
   document.getElementById("citySel").innerHTML = CITIES.map(c =>
-    `<a href="#${c.slug}" data-id="${c.id}"${c.id === selected ? ' aria-current="true"' : ""}><span class="dot" style="background:${c.color}"></span>${c.short || c.name}</a>`).join("");
+    `<a href="#${c.slug}" data-id="${c.id}"${c.id === selected ? ' aria-current="true"' : ""}><span class="dot" style="background:${c.color}"></span>${c.short || c.name}${selRain(c)}</a>`).join("");
   // no celular o seletor desliza: mantém a cidade escolhida visível
   document.querySelector('#citySel [aria-current="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }

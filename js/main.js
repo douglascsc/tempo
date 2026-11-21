@@ -6,15 +6,17 @@ async function refresh() {
   lastRefresh = Date.now();
   loadRadar();
   if (selected === "cb") loadRiver();
+  loadInmet().then(renderCards); // avisos do INMET chegam por fora, sem segurar o resto
   const st = document.getElementById("updated");
   try {
     await loadForecast();
     renderCards();
     renderChart();
-    runNowcast().then(() => { renderCards(); });
+    runNowcast().then(() => { renderCards(); renderCitySel(); }); // pílulas de chuva no seletor
     lastOk = new Date();
     st.className = "muted";
     tickClock();
+    if (!navigator.onLine) showOffline();
   } catch (e) {
     // erro: avisa se os dados na tela estão velhos e oferece tentar de novo
     st.className = "stale-msg";
@@ -23,6 +25,15 @@ async function refresh() {
     console.error(e);
   }
 }
+
+// Sem internet: o site instalado abre com os últimos dados salvos, e avisa isso
+function showOffline() {
+  const st = document.getElementById("updated");
+  st.className = "stale-msg";
+  st.innerHTML = `${uIcon("alert")} Sem internet: mostrando os últimos dados salvos (veja o horário de cada um)`;
+}
+addEventListener("offline", showOffline);
+addEventListener("online", () => refresh());
 
 // Horários relativos ("há X min") avançam sozinhos, sem recarregar a página
 function tickClock() {
@@ -69,3 +80,6 @@ setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && Date.now() - lastRefresh > REFRESH_MS) refresh();
 });
+
+// Site instalável no celular (PWA): guarda os arquivos e os últimos dados para abrir sem internet
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(console.error));
