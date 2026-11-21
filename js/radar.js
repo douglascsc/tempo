@@ -186,7 +186,7 @@ async function setSource(s) {
   fillModes();
   renderRadarMotion();
   document.getElementById("radarSrc").innerHTML = s === "ct"
-    ? `${uIcon("info")} <b>Fonte:</b> radar meteorológico de Porto Alegre, imagens da ${SRC.ct} (uso pessoal) · horário recortado da própria imagem`
+    ? `${uIcon("info")} <b>Fonte:</b> radar meteorológico de Porto Alegre, imagens da ${SRC.ct}`
     : `${uIcon("info")} <b>Fonte:</b> radar ${SRC.rv} · previsão desenhada: extrapolação do movimento da chuva feita por este site · mapa ${SRC.osm}`;
   if (s === "ct") preloadClimatempo();
   if (s === "rv") {
