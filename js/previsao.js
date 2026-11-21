@@ -213,7 +213,7 @@ function renderCards() {
   // do modelo fica só máx/mín do dia; o resto do cartão vem do radar
   box.innerHTML = `<article class="card wide city-top" style="--city:${c.color}">
     <h3 class="vh">${c.name}</h3>
-    ${inmet !== null ? `<div class="inmet-box">${inmetHtml(c)}</div>` : ""}
+    ${inmetHtml(c) ? `<div class="inmet-box">${inmetHtml(c)}</div>` : ""}
     <div class="wx-head">
       <div class="mini-col">
         <button class="mini-btn" onclick="openMini()" aria-label="Ampliar o mini-radar de ${c.name}" title="Toque para ampliar">

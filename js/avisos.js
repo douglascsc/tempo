@@ -23,11 +23,11 @@ async function loadInmet() {
   }
 }
 
-// Avisos da cidade: primeiro os que já valem (o mais grave antes), depois os próximos
+// Avisos da cidade (só laranja e vermelho; amarelo é frequente demais): primeiro os que já valem (o mais grave antes), depois os próximos
 function inmetFor(c) {
   if (!inmet) return [];
   const now = new Date();
-  return inmet.filter(a => a.geo.has(String(c.ibge)) && a.end > now)
+  return inmet.filter(a => a.lvl >= 2 && a.geo.has(String(c.ibge)) && a.end > now)
     .sort((a, b) => (a.start > now) - (b.start > now) || b.lvl - a.lvl || a.start - b.start);
 }
 
@@ -41,7 +41,7 @@ const dayTime = d => {
 function inmetHtml(c) {
   if (inmet === null) return "";
   const list = inmetFor(c);
-  if (!list.length) return inmetErr ? "" : `<div class="inmet none">${uIcon("check")} Sem avisos do INMET para ${c.name}</div>`;
+  if (!list.length) return "";
   const now = new Date();
   // o INMET costuma sobrepor amarelo e laranja do mesmo fenômeno: fica só o mais grave;
   // dos avisos futuros, só o próximo
