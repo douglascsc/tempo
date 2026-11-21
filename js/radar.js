@@ -59,7 +59,7 @@ function preloadClimatempo() {
 function initRainViewerMap() {
   if (rv.map) return;
   const c = CITIES.find(x => x.id === selected);
-  rv.map = L.map("rvMap", { zoomControl: true }).setView([c.lat, c.lon], 8);
+  rv.map = L.map("rvMap", { zoomControl: true, minZoom: 5 }).setView([c.lat, c.lon], 8);
   if (focusAll) rv.map.fitBounds(FOCUS.map(x => [x.lat, x.lon]), { padding: [60, 60], maxZoom: 10 });
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 12,
@@ -76,7 +76,7 @@ async function loadRainViewer() {
   const past = d.radar.past;                // mais antiga -> mais recente
   rv.times = past.map(p => new Date(p.time * 1000)).reverse(); // índice 0 = mais recente
   rv.layers = past.map((p, k) => L.tileLayer(`${d.host}${p.path}/256/{z}/{x}/{y}/2/1_1.png`, {
-    opacity: 0, maxNativeZoom: 7, maxZoom: 12, zIndex: 10 + k,
+    opacity: 0, minNativeZoom: 7, maxNativeZoom: 7, maxZoom: 12, zIndex: 10 + k, // o RainViewer grátis só tem zoom 7: reduz/amplia essa imagem
   }).addTo(rv.map)).reverse();
 }
 
