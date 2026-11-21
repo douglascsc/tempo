@@ -112,7 +112,7 @@ function drawArrow() {
   // rótulo do lado de fora da seta (oposto à cidade)
   const ox = Math.cos(ang * Math.PI / 180) > 0 ? "calc(-100% - 8px)" : "8px";
   const lbl = L.marker(start, { interactive: false, icon: L.divIcon({ className: "",
-    html: `<div class="rv-arrow-lbl" style="transform:translate(${ox},-50%)">vindo do ${f.from} · ${Math.round(f.speed)} km/h</div>`,
+    html: `<div class="rv-arrow-lbl" style="transform:translate(${ox},-50%)">${f.from} → ${toDir(f.from)} · ${Math.round(f.speed)} km/h</div>`,
     iconSize: [0, 0] }) });
   rv.arrow = [line, head, lbl].map(l => l.addTo(rv.map));
 }

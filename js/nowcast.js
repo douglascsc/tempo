@@ -9,6 +9,8 @@ const lonToX = lon => (lon + 180) / 360 * WORLD;
 const latToY = lat => { const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * WORLD; };
 const PX_KM = 40075 * Math.cos(29.8 * Math.PI / 180) / WORLD; // ~1,06 km por pixel
 const DIRS = ["norte", "nordeste", "leste", "sudeste", "sul", "sudoeste", "oeste", "noroeste"];
+// direção para onde a chuva vai (oposta à de onde vem)
+const toDir = from => DIRS[(DIRS.indexOf(from) + 4) % 8];
 const dirName = bearing => DIRS[Math.round((((bearing % 360) + 360) % 360) / 45) % 8];
 let nowcast = {}, radarMotion = null;
 
@@ -262,7 +264,7 @@ function renderRadarMotion() {
   el.hidden = src !== "rv";
   if (!radarMotion) { el.textContent = ""; return; }
   const m = radarMotion;
-  const mov = m.from ? ` · chuva vindo do <b>${m.from}</b> a <b>${Math.round(m.speed)} km/h</b>`
+  const mov = m.from ? ` · chuva andando de <b>${m.from}</b> para <b>${toDir(m.from)}</b> a ~${Math.round(m.speed)} km/h`
     : " · movimento da chuva: parado ou chuva insuficiente para estimar";
   el.innerHTML = `${uIcon("compass")} Radar RainViewer · imagem <b>${atAgo(m.time)}</b>${mov}`;
 }
