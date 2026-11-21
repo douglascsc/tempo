@@ -31,6 +31,7 @@ const wIcon = (name, cls = "w-ic") => `<svg class="${cls}" viewBox="0 0 64 64" a
 
 // ----- Ícones de interface (um traço, cor do texto, 24x24) -----
 const UI = {
+  drop: `<path class="fill" d="M12 3c3.5 4.6 6 8 6 11a6 6 0 0 1-12 0c0-3 2.5-6.4 6-11z"/>`,
   umbrella: `<path d="M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z"/><path d="M12 12v7a2 2 0 0 1-4 0"/>`,
   wave: `<path d="M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0 2 1 2 1"/><path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0 2 1 2 1"/><path d="M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0 2 1 2 1"/>`,
   wind: `<path d="M3 8h11a3 3 0 1 0-3-3"/><path d="M3 12h16a3 3 0 1 1-3 3"/><path d="M3 16h8"/>`,

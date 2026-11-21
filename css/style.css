@@ -404,3 +404,4 @@ canvas.mini { width: 110px; height: 110px; border-radius: 10px; border: 1px soli
 /* ----- Pílula de chuva no seletor de cidades ----- */
 .sel-rain { display: inline-block; margin-left: 5px; padding: 0 5px; border-radius: 8px; font-size: .72rem; font-weight: 700;
   line-height: 1.5; color: #fff; text-shadow: 0 0 2px rgba(0,0,0,.5); white-space: nowrap; }
+.sel-rain .u-ic { width: 1.05em; height: 1.05em; vertical-align: -0.15em; stroke: none; filter: drop-shadow(0 0 1px rgba(0,0,0,.5)); }
