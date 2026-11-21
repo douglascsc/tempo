@@ -249,7 +249,7 @@ function selRain(c) {
   const n = nowcast[c.id];
   if (!n || n.error || n.firstMin == null) return "";
   const [, lbl, col] = intensity(n.firstDbz);
-  const when = n.firstMin === 0 ? "agora" : `${n.firstMin}′`;
+  const when = n.firstMin === 0 ? uIcon("drop") : `${n.firstMin}′`; // chovendo agora: só a gota
   const txt = n.firstMin === 0 ? `possível chuva ${lbl} agora` : `possível chuva ${lbl} em ~${n.firstMin} min`;
   return ` <span class="sel-rain" style="background:${col}" title="${txt}" aria-label="${txt}">${when}</span>`;
 }
