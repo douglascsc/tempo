@@ -73,7 +73,7 @@ function renderChart() {
   // desenha no tamanho real da tela (texto nítido, sem distorção e sem rolagem lateral)
   const svg = document.getElementById("chart");
   const W = Math.max(280, svg.clientWidth || document.getElementById("chartWrap").clientWidth);
-  const H = IS_PHONE ? 220 : 280, L = 30, R = 30, T = 12, B = 26;
+  const H = IS_PHONE ? 230 : 290, L = 34, R = 34, T = 24, B = 26;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.style.height = H + "px";
   svg.setAttribute("aria-label", chartSummary(c, h));
@@ -101,13 +101,50 @@ function renderChart() {
   h.forEach((x, i) => { if (x.p > 0) s += `<rect x="${L + i * bw + 0.5}" y="${yP(x.p)}" width="${Math.max(1, bw - 1)}" height="${T + ph - yP(x.p)}" fill="${col("--rain")}" rx="1"><title>${hh(x.t)}: ${fmtMm(x.p)} mm</title></rect>`; });
   s += `<polyline fill="none" stroke="${col("--prob")}" stroke-width="1.5" stroke-dasharray="4 3" points="${h.map((x, i) => `${X(i)},${yPr(x.prob)}`).join(" ")}"/>`;
   s += `<polyline fill="none" stroke="${col("--temp")}" stroke-width="2.5" points="${h.map((x, i) => `${X(i)},${yT(x.temp)}`).join(" ")}"/>`;
+  // 3 escalas, cada uma na cor da sua linha: esquerda = chuva (mm), direita = temperatura (°C),
+  // dentro do gráfico = chance de chuva (%, de 0 a 100 na altura toda)
+  s += `<text x="${L - 5}" y="${T - 10}" text-anchor="end" class="ax-rain">mm</text>`;
+  s += `<text x="${W - R + 5}" y="${T - 10}" class="ax-temp">°C</text>`;
   [0, 0.5, 1].forEach(fr => {
-    s += `<text x="${L - 5}" y="${yP(maxP * fr) + 4}" text-anchor="end">${fmtMm(maxP * fr)}</text>`;
-    s += `<text x="${W - R + 5}" y="${yT(tMin + (tMax - tMin) * fr) + 4}">${Math.round(tMin + (tMax - tMin) * fr)}°</text>`;
+    if (fr) s += `<line x1="${L}" x2="${W - R}" y1="${T + ph - fr * ph}" y2="${T + ph - fr * ph}" stroke="${col("--line")}" stroke-dasharray="2 4"/>`;
+    s += `<text x="${L - 5}" y="${yP(maxP * fr) + 4}" text-anchor="end" class="ax-rain">${fmtMm(maxP * fr)}</text>`;
+    s += `<text x="${W - R + 5}" y="${yT(tMin + (tMax - tMin) * fr) + 4}" class="ax-temp">${Math.round(tMin + (tMax - tMin) * fr)}°</text>`;
+    if (fr) s += `<text x="${L + 4}" y="${yPr(fr * 100) + (fr === 1 ? 11 : -3)}" class="ax-prob">${fr * 100}%</text>`;
   });
   s += `<line x1="${L}" x2="${W - R}" y1="${T + ph}" y2="${T + ph}" stroke="${col("--line")}"/>`;
+  s += `<line id="chHoverLine" x1="0" x2="0" y1="${T}" y2="${T + ph}" stroke="${col("--text")}" stroke-width="1" visibility="hidden"/>`;
   svg.innerHTML = s;
+  chartState = { h, L, bw, n, X };
 }
+
+// ----- Dica ao passar o mouse (ou o dedo) sobre o gráfico -----
+let chartState = null;
+function chartHover(ev) {
+  const st = chartState, svg = document.getElementById("chart"), tip = document.getElementById("chartTip");
+  if (!st) return;
+  const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+  const x = (ev.clientX - r.left) * vb.width / r.width;
+  const i = Math.floor((x - st.L) / st.bw);
+  const line = document.getElementById("chHoverLine");
+  if (i < 0 || i >= st.n) { tip.hidden = true; line?.setAttribute("visibility", "hidden"); return; }
+  const d = st.h[i], cx = st.X(i);
+  line.setAttribute("x1", cx); line.setAttribute("x2", cx); line.setAttribute("visibility", "visible");
+  const dia = d.t.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+  tip.innerHTML = `<b>${dia} ${hh(d.t)}</b><br><span class="ax-temp">●</span> ${Math.round(d.temp)}°C<br>` +
+    `<span class="ax-rain">■</span> chuva ${fmtMm(d.p)} mm<br><span class="ax-prob">●</span> chance ${d.prob}%`;
+  tip.hidden = false;
+  const px = cx * r.width / vb.width, w = tip.offsetWidth;
+  tip.style.left = `${Math.min(Math.max(0, px - w / 2), r.width - w)}px`;
+}
+(() => {
+  const svg = document.getElementById("chart");
+  svg.addEventListener("pointermove", chartHover);
+  svg.addEventListener("pointerdown", chartHover);
+  svg.addEventListener("pointerleave", () => {
+    document.getElementById("chartTip").hidden = true;
+    document.getElementById("chHoverLine")?.setAttribute("visibility", "hidden");
+  });
+})();
 
 document.querySelectorAll("#chartRange button").forEach(b => b.onclick = () => {
   chartHours = +b.dataset.h;

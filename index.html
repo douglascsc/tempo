@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f6feb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z' fill='%231f6feb'/><path d='M12 12v7a2 2 0 0 1-4 0'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=39">
+<link rel="stylesheet" href="css/style.css?v=40">
 </head>
 <body>
 <main>
@@ -79,11 +79,11 @@
       </div>
     </div>
     <div id="dryWindow">&nbsp;</div>
-    <div id="chartWrap"><svg id="chart" role="img" aria-label="Gráfico de chuva e temperatura"></svg></div>
+    <div id="chartWrap"><svg id="chart" role="img" aria-label="Gráfico de chuva e temperatura"></svg><div id="chartTip" class="chart-tip" hidden></div></div>
     <div class="legend">
-      <span class="lg-rain">Chuva (mm/h)</span>
-      <span class="lg-temp">Temperatura (°C)</span>
-      <span class="lg-prob">Probabilidade de chuva (%)</span>
+      <span class="lg-rain">Chuva (mm/h, escala da esquerda)</span>
+      <span class="lg-temp">Temperatura (°C, escala da direita)</span>
+      <span class="lg-prob">Chance de chuva (%, 0 embaixo a 100% em cima)</span>
       <span class="lg-dry">Melhor janela seca</span>
     </div>
     <div class="src-line" id="chartSrc"></div>
@@ -137,13 +137,13 @@
   <div class="src-line">Fonte: radar de Porto Alegre, imagem da Climatempo · a seta mostra de onde a chuva vem (movimento calculado com o RainViewer) · área de ~200 km</div>
 </dialog>
 
-<script src="js/config.js?v=39"></script>
-<script src="js/icones.js?v=39"></script>
-<script src="js/previsao.js?v=39"></script>
-<script src="js/grafico.js?v=39"></script>
-<script src="js/radar.js?v=39"></script>
-<script src="js/nowcast.js?v=39"></script>
-<script src="js/rio.js?v=39"></script>
-<script src="js/main.js?v=39"></script>
+<script src="js/config.js?v=40"></script>
+<script src="js/icones.js?v=40"></script>
+<script src="js/previsao.js?v=40"></script>
+<script src="js/grafico.js?v=40"></script>
+<script src="js/radar.js?v=40"></script>
+<script src="js/nowcast.js?v=40"></script>
+<script src="js/rio.js?v=40"></script>
+<script src="js/main.js?v=40"></script>
 </body>
 </html>
