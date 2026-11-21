@@ -36,7 +36,7 @@ function renderNext12() {
   const h = f.hourly.time.map((t, i) => ({ t: parseT(t), p: f.hourly.precipitation[i] ?? 0, prob: f.hourly.precipitation_probability[i] ?? 0 }))
     .filter(x => x.t.getTime() + 3600e3 > now).slice(2, 14); // as 2 primeiras horas já estão no radar
   document.getElementById("next12").innerHTML = `
-    <div class="nc-lbl">Depois das próximas 2 h <span class="muted">· previsão do tempo, hora a hora (${hh(h[0].t)} às ${hh(h[h.length - 1].t)})</span></div>
+    <div class="nc-lbl">Previsão do tempo, hora a hora</div>
     <div class="nc-blocks n12">${h.map(x => {
       const [, lbl, col] = mmToInt(x.p);
       return `<div title="${fmtMm(x.p)} mm · ${x.prob}%"><div class="muted nc-t">${hh(x.t)}</div><span class="sq" style="background:${col}"></span>
